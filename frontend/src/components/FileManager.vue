@@ -112,12 +112,13 @@
         </div>
 
         <!-- 檔案詳情 Modal -->
-        <div class="modal fade" id="fileDetailModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
+        <div class="modal fade" id="fileDetailModal" tabindex="-1" role="dialog" aria-labelledby="fileDetailModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">檔案詳情</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <h5 class="modal-title" id="fileDetailModalLabel">檔案詳情</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
                     </div>
                     <div class="modal-body">
                         <div v-if="selectedFile">
@@ -147,15 +148,16 @@
         </div>
 
         <!-- 過期提醒 Modal -->
-        <div class="modal fade" id="expiryWarningModal" tabindex="-1">
-            <div class="modal-dialog">
+        <div class="modal fade" id="expiryWarningModal" tabindex="-1" role="dialog"
+            aria-labelledby="expiryWarningModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header bg-warning text-dark">
-                        <h5 class="modal-title">
+                        <h5 class="modal-title" id="expiryWarningModalLabel">
                             <i class="bi bi-exclamation-triangle me-2"></i>
                             檔案即將過期
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="關閉"></button>
                     </div>
                     <div class="modal-body">
                         <p>以下檔案將在 24 小時內過期並自動刪除：</p>
