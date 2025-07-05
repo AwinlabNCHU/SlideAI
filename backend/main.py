@@ -52,8 +52,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=get_cors_origins(),
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 def get_db():
@@ -378,6 +379,22 @@ def admin_usage_statistics(token: str = Depends(oauth2_scheme), db: Session = De
     except JWTError:
         raise HTTPException(status_code=401, detail='Token 無效')
 
+@app.get('/')
+def root():
+    """根路徑 - API 資訊"""
+    return {
+        "message": "SlideAI Backend API",
+        "status": "running",
+        "timestamp": datetime.utcnow().isoformat(),
+        "version": "1.0.0",
+        "endpoints": {
+            "health": "/health",
+            "api_docs": "/docs",
+            "register": "/api/register",
+            "login": "/api/login"
+        }
+    }
+
 @app.get('/health')
 def health_check():
     """健康檢查端點 - 包含記憶體使用情況"""
@@ -402,6 +419,12 @@ def health_check():
             "timestamp": datetime.utcnow().isoformat(),
             "error": "無法獲取記憶體資訊"
         }
+
+# 處理 OPTIONS 請求（CORS 預檢）
+@app.options('/{full_path:path}')
+async def options_handler(full_path: str):
+    """處理 CORS 預檢請求"""
+    return {"message": "OK"}
 
 @app.get('/api/admin/daily-usage-summary')
 def admin_daily_usage_summary(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
