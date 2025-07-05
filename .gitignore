@@ -1,0 +1,57 @@
+# Node.js
+node_modules/
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.env.*
+
+# macOS
+.DS_Store
+
+# VSCode
+.vscode/
+!.vscode/extensions.json
+.idea/
+
+# Logs
+logs/
+*.log
+
+# Temp storage
+temp_videos/
+temp_ppt/
+*.mp4
+
+# Build
+build/
+
+# Test
+coverage/
+
+# Others
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local database
+*.sqlite3
+*.db
+
+# Misc
+*.bak
+*.tmp 

@@ -1,0 +1,18 @@
+# Setting
+
+1. Frontend
+
+``` shell
+    cd frontend/
+    npm run dev
+```
+
+2. Backend
+
+``` shell
+    cd backend/
+    python -m venv .venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    unicorn main:app --reload
+```
