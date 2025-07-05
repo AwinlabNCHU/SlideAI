@@ -9,6 +9,14 @@ export default defineConfig({
     outDir: "dist",
     assetsDir: "assets",
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["vue", "vue-router"],
+          ui: ["vuetify", "bootstrap"],
+        },
+      },
+    },
   },
   server: {
     port: 5173,
@@ -18,5 +26,8 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  optimizeDeps: {
+    include: ["vue", "vue-router", "vuetify"],
   },
 });
