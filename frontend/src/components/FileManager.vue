@@ -1,99 +1,111 @@
 <template>
-    <div class="file-manager">
+    <div class="file-manager-bg">
+        <!-- Fixed Navbar -->
+        <nav class="navbar navbar-expand-lg shadow-sm fixed-top" style="background: var(--color-dark);">
+            <div class="container-fluid">
+                <router-link to="/dashboard" class="navbar-brand navbar-brand-custom mx-5">SlideAI</router-link>
+                <div class="d-flex align-items-center mx-5">
+                    <router-link v-if="isAdmin" to="/admin" class="navbar-brand navbar-brand-custom me-3"
+                        :style="{ color: 'var(--color-primary)' }">管理者介面</router-link>
+                    <router-link v-if="!isAdmin" to="/dashboard" class="navbar-brand navbar-brand-custom me-3"
+                        :style="{ color: 'var(--color-primary)' }">介面</router-link>
+                    <router-link to="/video-abstract" class="navbar-brand navbar-brand-custom me-3"
+                        :style="{ color: 'var(--color-primary)' }">AI影片摘要</router-link>
+                    <router-link to="/ppt-generator" class="navbar-brand navbar-brand-custom me-3"
+                        :style="{ color: 'var(--color-primary)' }">AI語音簡報</router-link>
+                    <router-link to="/files" class="navbar-brand navbar-brand-custom me-3"
+                        :style="{ color: 'white' }">檔案管理</router-link>
+                    <button class="btn btn-outline-light ms-3" @click="logout">登出</button>
+                </div>
+            </div>
+        </nav>
         <div class="container">
-            <div class="row">
-                <div class="col-12">
-                    <div class="card shadow-lg">
-                        <div class="card-header bg-primary text-white">
-                            <h4 class="mb-0">
-                                <i class="bi bi-folder2-open me-2"></i>
-                                檔案管理
-                            </h4>
-                        </div>
-                        <div class="card-body">
-                            <!-- 檔案統計 -->
-                            <div class="row mb-4">
-                                <div class="col-md-4">
-                                    <div class="stat-card text-center p-3 bg-light rounded">
-                                        <h5 class="text-primary">{{ files.length }}</h5>
-                                        <small class="text-muted">總檔案數</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="stat-card text-center p-3 bg-warning bg-opacity-10 rounded">
-                                        <h5 class="text-warning">{{ expiringFiles.length }}</h5>
-                                        <small class="text-muted">即將過期</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="stat-card text-center p-3 bg-info bg-opacity-10 rounded">
-                                        <h5 class="text-info">{{ totalSize }}</h5>
-                                        <small class="text-muted">總大小 (MB)</small>
-                                    </div>
-                                </div>
-                            </div>
+            <div class="file-manager-card card shadow-lg p-4"
+                style="max-width: 1200px; width: 100%; margin: 120px auto 0 auto;">
+                <h2 class="mb-3 text-center file-manager-title">檔案管理</h2>
+                <p class="text-center mb-4 file-manager-desc">管理您的 AI 生成檔案，查看分析結果和下載檔案。</p>
 
-                            <!-- 檔案列表 -->
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>檔案名稱</th>
-                                            <th>類型</th>
-                                            <th>大小</th>
-                                            <th>狀態</th>
-                                            <th>建立時間</th>
-                                            <th>過期時間</th>
-                                            <th>操作</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="file in files" :key="file.id"
-                                            :class="{ 'table-warning': isExpiringSoon(file) }">
-                                            <td>
-                                                <i class="bi bi-file-earmark me-2"></i>
-                                                {{ file.file_name }}
-                                            </td>
-                                            <td>
-                                                <span class="badge" :class="getTypeBadgeClass(file.file_type)">
-                                                    {{ getTypeLabel(file.file_type) }}
-                                                </span>
-                                            </td>
-                                            <td>{{ formatFileSize(file.file_size) }}</td>
-                                            <td>
-                                                <span class="badge" :class="getStatusBadgeClass(file.status)">
-                                                    {{ getStatusLabel(file.status) }}
-                                                </span>
-                                            </td>
-                                            <td>{{ formatDate(file.created_at) }}</td>
-                                            <td>
-                                                <span :class="{ 'text-danger': isExpiringSoon(file) }">
-                                                    {{ formatDate(file.expires_at) }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <button class="btn btn-outline-primary" @click="viewFile(file)"
-                                                        title="查看">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                    <button class="btn btn-outline-danger" @click="deleteFile(file)"
-                                                        title="刪除">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr v-if="files.length === 0">
-                                            <td colspan="7" class="text-center text-muted py-4">
-                                                <i class="bi bi-inbox display-4"></i>
-                                                <p class="mt-2">暫無檔案</p>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                <div class="card-body p-0">
+                    <!-- 檔案統計 -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="stat-card text-center p-3 rounded">
+                                <h5 class="stat-number">{{ files.length }}</h5>
+                                <small class="stat-label">總檔案數</small>
                             </div>
                         </div>
+                        <div class="col-md-4">
+                            <div class="stat-card text-center p-3 rounded">
+                                <h5 class="stat-number warning">{{ expiringFiles.length }}</h5>
+                                <small class="stat-label">即將過期</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-card text-center p-3 rounded">
+                                <h5 class="stat-number info">{{ totalSize }}</h5>
+                                <small class="stat-label">總大小 (MB)</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 檔案列表 -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>檔案名稱</th>
+                                    <th>類型</th>
+                                    <th>大小</th>
+                                    <th>狀態</th>
+                                    <th>建立時間</th>
+                                    <th>過期時間</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="file in files" :key="file.id"
+                                    :class="{ 'table-warning': isExpiringSoon(file) }">
+                                    <td>
+                                        <i class="bi bi-file-earmark me-2"></i>
+                                        {{ file.file_name }}
+                                    </td>
+                                    <td>
+                                        <span class="badge" :class="getTypeBadgeClass(file.file_type)">
+                                            {{ getTypeLabel(file.file_type) }}
+                                        </span>
+                                    </td>
+                                    <td>{{ formatFileSize(file.file_size) }}</td>
+                                    <td>
+                                        <span class="badge" :class="getStatusBadgeClass(file.status)">
+                                            {{ getStatusLabel(file.status) }}
+                                        </span>
+                                    </td>
+                                    <td>{{ formatDate(file.created_at) }}</td>
+                                    <td>
+                                        <span :class="{ 'text-danger': isExpiringSoon(file) }">
+                                            {{ formatDate(file.expires_at) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" @click="viewFile(file)" title="查看">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" @click="deleteFile(file)" title="刪除">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="files.length === 0">
+                                    <td colspan="7" class="text-center py-5">
+                                        <i class="bi bi-inbox display-4" style="color: #3a8dde; opacity: 0.5;"></i>
+                                        <p class="mt-3" style="color: #b0bed9; font-size: 1.1rem;">暫無檔案</p>
+                                        <small style="color: #6c7a92;">上傳檔案後將在此顯示</small>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -172,12 +184,30 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { apiRequest, API_ENDPOINTS } from '../config/api.js'
 
+const router = useRouter()
 const files = ref([])
 const expiringFiles = ref([])
 const selectedFile = ref(null)
 const loading = ref(false)
+
+const isAdmin = ref(false)
+
+const logout = () => {
+    localStorage.removeItem('token')
+    router.push('/login')
+}
+
+const fetchMe = async () => {
+    try {
+        const me = await apiRequest(API_ENDPOINTS.ME)
+        isAdmin.value = !!me.is_admin
+    } catch (error) {
+        console.error('獲取用戶資訊失敗:', error)
+    }
+}
 
 // 計算屬性
 const totalSize = computed(() => {
@@ -308,6 +338,7 @@ const getStatusBadgeClass = (status) => {
 
 // 組件掛載時獲取資料
 onMounted(async () => {
+    await fetchMe()
     await fetchFiles()
     await fetchExpiringFiles()
 
@@ -317,33 +348,174 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.file-manager {
-    padding: 20px 0;
+.file-manager-bg {
+    background: #181c24;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.file-manager-card {
+    border-radius: 1.2rem;
+    background: #232b3a;
+    color: #fff;
+}
+
+.file-manager-title {
+    color: #3a8dde;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.file-manager-desc {
+    color: #b0bed9;
+    font-size: 1.1rem;
 }
 
 .stat-card {
     transition: transform 0.2s;
+    background: #202634 !important;
+    border: 1px solid #3a8dde33;
+    color: #b0bed9;
 }
 
 .stat-card:hover {
     transform: translateY(-2px);
+    border-color: #3a8dde66;
+}
+
+.stat-number {
+    color: #3a8dde;
+    font-weight: bold;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-number.warning {
+    color: #ffc107;
+}
+
+.stat-number.info {
+    color: #17a2b8;
+}
+
+.stat-label {
+    color: #b0bed9;
+    font-size: 0.9rem;
+}
+
+.table {
+    color: #b0bed9;
+    background: #202634;
+    border-radius: 0.5rem;
+    overflow: hidden;
 }
 
 .table th {
     border-top: none;
     font-weight: 600;
+    background: #232b3a;
+    color: #3a8dde;
+    border-bottom: 2px solid #3a8dde33;
+}
+
+.table td {
+    border-color: #3a8dde22;
+    vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+    background: #2a3441;
 }
 
 .btn-group .btn {
     padding: 0.25rem 0.5rem;
+    border-color: #3a8dde;
+    color: #3a8dde;
+}
+
+.btn-group .btn:hover {
+    background: #3a8dde;
+    color: #fff;
+}
+
+.btn-outline-danger {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+    background: #dc3545;
+    color: #fff;
 }
 
 .modal-header {
-    border-bottom: 2px solid;
+    border-bottom: 2px solid #3a8dde33;
+    background: #232b3a;
+    color: #b0bed9;
+}
+
+.modal-content {
+    background: #232b3a;
+    color: #b0bed9;
+}
+
+.modal-body {
+    background: #202634;
 }
 
 .list-group-item {
     border-left: none;
     border-right: none;
+    background: #202634;
+    color: #b0bed9;
+    border-color: #3a8dde22;
+}
+
+.badge {
+    font-size: 0.8rem;
+}
+
+.bg-primary {
+    background: #3a8dde !important;
+}
+
+.bg-success {
+    background: #28a745 !important;
+}
+
+.bg-warning {
+    background: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.bg-danger {
+    background: #dc3545 !important;
+}
+
+.bg-info {
+    background: #17a2b8 !important;
+}
+
+.bg-secondary {
+    background: #6c757d !important;
+}
+
+@media (max-width: 768px) {
+    .file-manager-card {
+        margin: 100px 10px 0 10px;
+        padding: 1.2rem;
+    }
+
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+
+    .btn-group .btn {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.8rem;
+    }
 }
 </style>

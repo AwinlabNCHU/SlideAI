@@ -11,6 +11,8 @@
                         :style="{ color: 'var(--color-primary)' }">AI影片摘要</router-link>
                     <router-link to="/video-abstract" class="navbar-brand navbar-brand-custom me-3"
                         :style="{ color: 'white' }">AI語音簡報</router-link>
+                    <router-link to="/files" class="navbar-brand navbar-brand-custom me-3"
+                        :style="{ color: 'white' }">檔案管理</router-link>
                     <button class="btn btn-outline-light ms-3" @click="logout">登出</button>
                 </div>
             </div>
