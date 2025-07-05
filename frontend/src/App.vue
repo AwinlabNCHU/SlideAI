@@ -1,9 +1,10 @@
 <script setup>
-// 無需內容
+import DebugPanel from './components/DebugPanel.vue'
 </script>
 
 <template>
   <router-view />
+  <DebugPanel />
 </template>
 
 <style scoped>

@@ -7,6 +7,7 @@ import Landing from "./components/Landing.vue";
 import VideoAbstract from "./components/VideoAbstract.vue";
 import PPTGenerator from "./components/PPTGenerator.vue";
 import AdminDashboard from "./components/AdminDashboard.vue";
+import TestPage from "./components/TestPage.vue";
 
 const routes = [
   { path: "/", component: Landing },
@@ -30,6 +31,7 @@ const routes = [
     component: AdminDashboard,
     meta: { requiresAuth: true, isAdmin: true },
   },
+  { path: "/test", component: TestPage },
 ];
 
 export default routes;
