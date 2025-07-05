@@ -8,6 +8,7 @@ import VideoAbstract from "./components/VideoAbstract.vue";
 import PPTGenerator from "./components/PPTGenerator.vue";
 import AdminDashboard from "./components/AdminDashboard.vue";
 import TestPage from "./components/TestPage.vue";
+import FileManager from "./components/FileManager.vue";
 
 const routes = [
   { path: "/", component: Landing },
@@ -30,6 +31,11 @@ const routes = [
     path: "/admin",
     component: AdminDashboard,
     meta: { requiresAuth: true, isAdmin: true },
+  },
+  {
+    path: "/files",
+    component: FileManager,
+    meta: { requiresAuth: true },
   },
   { path: "/test", component: TestPage },
 ];

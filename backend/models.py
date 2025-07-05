@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime, date
@@ -14,8 +14,9 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     reset_token = Column(String, nullable=True)  # 新增重設密碼token欄位
     
-    # 關聯到使用記錄
+    # 關聯到使用記錄和檔案
     usage_records = relationship("UsageRecord", back_populates="user")
+    files = relationship("UserFile", back_populates="user")
 
 class UsageRecord(Base):
     __tablename__ = 'usage_records'
@@ -27,3 +28,19 @@ class UsageRecord(Base):
     
     # 關聯到使用者
     user = relationship("User", back_populates="usage_records")
+
+class UserFile(Base):
+    __tablename__ = 'user_files'
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    file_name = Column(String, nullable=False)
+    file_path = Column(String, nullable=False)  # 檔案在伺服器上的路徑
+    file_type = Column(String, nullable=False)  # 'video_abstract' 或 'ppt_to_video'
+    file_size = Column(Integer, nullable=False)  # 檔案大小 (bytes)
+    status = Column(String, default='processing')  # 'processing', 'completed', 'expired'
+    created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=False)  # 檔案過期時間
+    analysis_result = Column(Text, nullable=True)  # 分析結果 (文字摘要)
+    
+    # 關聯到使用者
+    user = relationship("User", back_populates="files")

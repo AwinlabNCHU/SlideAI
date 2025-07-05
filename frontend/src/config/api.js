@@ -23,11 +23,15 @@ export const API_ENDPOINTS = {
   USAGE_STATUS: "/api/usage-status",
   VIDEO_ABSTRACT: "/api/video-abstract",
   PPT_TO_VIDEO: "/api/ppt-to-video",
+  USER_FILES: "/api/user/files",
+  USER_FILES_EXPIRING: "/api/user/files/expiring",
+  USER_FILES_DELETE: "/api/user/files",
   ADMIN_USER_COUNT: "/api/admin/user-count",
   ADMIN_USER_TOTAL: "/api/admin/user-total",
   ADMIN_USER_LIST: "/api/admin/user-list",
   ADMIN_USAGE_STATISTICS: "/api/admin/usage-statistics",
   ADMIN_DAILY_USAGE_SUMMARY: "/api/admin/daily-usage-summary",
+  ADMIN_CLEANUP_FILES: "/api/admin/cleanup-files",
 };
 
 // 創建完整的 API URL

@@ -14,8 +14,8 @@ import secrets
 from dotenv import load_dotenv
 import shutil
 import uuid
-from models import User, UsageRecord, Base  
-from datetime import datetime, date
+from models import User, UsageRecord, UserFile, Base  
+from datetime import datetime, date, timedelta
 from fastapi import status
 import psutil
 
@@ -26,6 +26,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'devsecret')
 ALGORITHM = 'HS256'
 DAILY_USAGE_LIMIT = 5  # 每日使用次數限制
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB (免費方案限制)
+FILE_RETENTION_DAYS = 7  # 檔案保留天數
+FILE_EXPIRY_WARNING_HOURS = 24  # 檔案過期前警告時間 (小時)
 
 # 處理 Render.com 的 DATABASE_URL 格式
 if DATABASE_URL.startswith("postgres://"):
@@ -122,6 +124,53 @@ def record_usage(user: User, service_type: str, db: Session):
     db.add(usage_record)
     db.commit()
 
+def create_file_record(user: User, file_name: str, file_path: str, file_type: str, file_size: int, db: Session):
+    """創建檔案記錄"""
+    expires_at = datetime.utcnow() + timedelta(days=FILE_RETENTION_DAYS)
+    file_record = UserFile(
+        user_id=user.id,
+        file_name=file_name,
+        file_path=file_path,
+        file_type=file_type,
+        file_size=file_size,
+        expires_at=expires_at
+    )
+    db.add(file_record)
+    db.commit()
+    return file_record
+
+def cleanup_expired_files(db: Session):
+    """清理過期檔案"""
+    now = datetime.utcnow()
+    expired_files = db.query(UserFile).filter(
+        UserFile.expires_at < now,
+        UserFile.status != 'expired'
+    ).all()
+    
+    for file_record in expired_files:
+        try:
+            # 刪除實體檔案
+            if os.path.exists(file_record.file_path):
+                os.remove(file_record.file_path)
+            
+            # 更新資料庫狀態
+            file_record.status = 'expired'
+            db.commit()
+            print(f"已刪除過期檔案: {file_record.file_name}")
+        except Exception as e:
+            print(f"刪除檔案失敗 {file_record.file_name}: {e}")
+
+def get_expiring_files(db: Session, hours: int = FILE_EXPIRY_WARNING_HOURS):
+    """獲取即將過期的檔案"""
+    now = datetime.utcnow()
+    warning_time = now + timedelta(hours=hours)
+    
+    return db.query(UserFile).filter(
+        UserFile.expires_at <= warning_time,
+        UserFile.expires_at > now,
+        UserFile.status == 'completed'
+    ).all()
+
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
@@ -137,6 +186,16 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     password: str
+
+class FileInfo(BaseModel):
+    id: int
+    file_name: str
+    file_type: str
+    file_size: int
+    status: str
+    created_at: datetime
+    expires_at: datetime
+    analysis_result: str = None
 
 @app.post('/api/register')
 def register(req: RegisterRequest, db: Session = Depends(get_db)):
@@ -219,39 +278,64 @@ async def video_abstract(
         raise HTTPException(status_code=429, detail=f"今日使用次數已達上限({DAILY_USAGE_LIMIT}次)，請明天再試")
     
     # 1. 檢查檔案類型
-    # print("content_type:", file.content_type)
     if not file.content_type or not file.content_type.startswith("video/"):
         raise HTTPException(status_code=400, detail="只允許上傳影片檔案")
     
-    # 2. 檢查檔案大小（限制 100MB）
+    # 2. 檢查檔案大小
     file.file.seek(0, os.SEEK_END)
     size = file.file.tell()
     file.file.seek(0)
-    max_size = 100 * 1024 * 1024  # 100MB
-    if size > max_size:
-        raise HTTPException(status_code=400, detail="檔案過大，請上傳 100MB 以下的影片")
+    if size > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail=f"檔案過大，請上傳 {MAX_FILE_SIZE // 1024 // 1024}MB 以下的影片")
     
-    # 3. 暫存影片
-    temp_dir = "temp_videos"
-    os.makedirs(temp_dir, exist_ok=True)
-    temp_filename = f"{uuid.uuid4()}_{file.filename}"
-    temp_path = os.path.join(temp_dir, temp_filename)
-    with open(temp_path, "wb") as buffer:
+    # 3. 創建檔案目錄
+    files_dir = os.path.join(os.getcwd(), "user_files")
+    os.makedirs(files_dir, exist_ok=True)
+    
+    # 4. 生成唯一檔案名並保存
+    file_extension = os.path.splitext(file.filename)[1]
+    unique_filename = f"{uuid.uuid4()}{file_extension}"
+    file_path = os.path.join(files_dir, unique_filename)
+    
+    with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
-    # 4. 呼叫 AI model 分析（這裡用假資料）
-    # result = your_ai_model(temp_path)
-    result = "這是AI分析的影片摘要結果"
+    # 5. 創建檔案記錄
+    file_record = create_file_record(
+        user=current_user,
+        file_name=file.filename,
+        file_path=file_path,
+        file_type="video_abstract",
+        file_size=size,
+        db=db
+    )
     
-    # 5. 記錄使用次數
-    record_usage(current_user, "video_abstract", db)
-    
-    # 6. 分析完自動刪除暫存檔
     try:
-        os.remove(temp_path)
-    except Exception:
-        pass
-    return {"result": result}
+        # 6. 呼叫 AI model 分析（這裡用假資料）
+        # result = your_ai_model(file_path)
+        result = f"這是影片 {file.filename} 的 AI 摘要。影片內容分析完成，包含關鍵場景、重要對話和主要情節。"
+        
+        # 7. 更新檔案記錄
+        file_record.analysis_result = result
+        file_record.status = 'completed'
+        db.commit()
+        
+        # 8. 記錄使用次數
+        record_usage(current_user, "video_abstract", db)
+        
+        return {
+            "result": result,
+            "file_id": file_record.id,
+            "expires_at": file_record.expires_at.isoformat(),
+            "retention_days": FILE_RETENTION_DAYS
+        }
+    except Exception as e:
+        # 如果處理失敗，清理檔案
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        db.delete(file_record)
+        db.commit()
+        raise HTTPException(status_code=500, detail=f'處理失敗: {str(e)}')
 
 
 @app.post("/api/ppt-to-video")
@@ -268,32 +352,76 @@ async def ppt_to_video(
     if not file.content_type or file.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="只允許上傳 PDF 檔案")
     
-    # 2. 檢查檔案大小（例如 20MB）
+    # 2. 檢查檔案大小
     file.file.seek(0, os.SEEK_END)
     size = file.file.tell()
     file.file.seek(0)
-    max_size = 20 * 1024 * 1024
+    max_size = 20 * 1024 * 1024  # 20MB for PDF
     if size > max_size:
         raise HTTPException(status_code=400, detail="檔案過大，請上傳 20MB 以下的 PDF")
     
-    # 3. 暫存 PDF
-    temp_dir = "temp_ppt"
-    os.makedirs(temp_dir, exist_ok=True)
-    temp_pdf = os.path.join(temp_dir, f"{uuid.uuid4()}.pdf")
-    with open(temp_pdf, "wb") as buffer:
+    # 3. 創建檔案目錄
+    files_dir = os.path.join(os.getcwd(), "user_files")
+    os.makedirs(files_dir, exist_ok=True)
+    
+    # 4. 保存 PDF 檔案
+    pdf_filename = f"{uuid.uuid4()}.pdf"
+    pdf_path = os.path.join(files_dir, pdf_filename)
+    
+    with open(pdf_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
-    # 4. AI model 生成影片（這裡用假影片）
-    temp_video = os.path.join(temp_dir, f"{uuid.uuid4()}.mp4")
-    # 這裡應該呼叫你的 AI model，並產生 temp_video
-    # 這裡用一個現有的 mp4 檔案作為 demo
-    shutil.copyfile("demo.mp4", temp_video)
+    # 5. 創建檔案記錄
+    file_record = create_file_record(
+        user=current_user,
+        file_name=file.filename,
+        file_path=pdf_path,
+        file_type="ppt_to_video",
+        file_size=size,
+        db=db
+    )
     
-    # 5. 記錄使用次數
-    record_usage(current_user, "ppt_to_video", db)
-    
-    # 6. 回傳影片檔案
-    return FileResponse(temp_video, media_type="video/mp4", filename="ai_presentation.mp4")
+    try:
+        # 6. AI model 生成影片（這裡用假影片）
+        video_filename = f"{uuid.uuid4()}.mp4"
+        video_path = os.path.join(files_dir, video_filename)
+        
+        # 這裡應該呼叫你的 AI model，並產生 video_path
+        # 這裡用一個現有的 mp4 檔案作為 demo
+        if os.path.exists("demo.mp4"):
+            shutil.copyfile("demo.mp4", video_path)
+        else:
+            # 創建一個假的影片檔案
+            with open(video_path, "wb") as f:
+                f.write(b"fake video content")
+        
+        # 7. 更新檔案記錄
+        file_record.analysis_result = f"已生成影片: {video_filename}"
+        file_record.status = 'completed'
+        db.commit()
+        
+        # 8. 記錄使用次數
+        record_usage(current_user, "ppt_to_video", db)
+        
+        # 9. 回傳影片檔案
+        return FileResponse(
+            video_path, 
+            media_type="video/mp4", 
+            filename="ai_presentation.mp4",
+            headers={
+                "X-File-ID": str(file_record.id),
+                "X-Expires-At": file_record.expires_at.isoformat(),
+                "X-Retention-Days": str(FILE_RETENTION_DAYS)
+            }
+        )
+    except Exception as e:
+        # 如果處理失敗，清理檔案
+        for path in [pdf_path, video_path]:
+            if os.path.exists(path):
+                os.remove(path)
+        db.delete(file_record)
+        db.commit()
+        raise HTTPException(status_code=500, detail=f'處理失敗: {str(e)}')
 
 @app.get('/api/admin/user-count')
 def admin_user_count(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
@@ -409,6 +537,16 @@ def health_check():
     """健康檢查端點 - 包含記憶體使用情況"""
     try:
         memory = psutil.virtual_memory()
+        
+        # 執行檔案清理
+        db = next(get_db())
+        try:
+            cleanup_expired_files(db)
+        except Exception as e:
+            print(f"檔案清理失敗: {e}")
+        finally:
+            db.close()
+        
         return {
             "status": "healthy",
             "timestamp": datetime.utcnow().isoformat(),
@@ -419,7 +557,8 @@ def health_check():
             },
             "free_tier_info": {
                 "max_file_size_mb": MAX_FILE_SIZE // 1024 // 1024,
-                "daily_usage_limit": DAILY_USAGE_LIMIT
+                "daily_usage_limit": DAILY_USAGE_LIMIT,
+                "file_retention_days": FILE_RETENTION_DAYS
             }
         }
     except Exception as e:
@@ -469,6 +608,78 @@ def list_users(db: Session = Depends(get_db)):
     ]
 
 
+
+@app.get('/api/user/files')
+def get_user_files(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """獲取使用者的檔案列表"""
+    files = db.query(UserFile).filter(
+        UserFile.user_id == current_user.id,
+        UserFile.status != 'expired'
+    ).order_by(UserFile.created_at.desc()).all()
+    
+    return [
+        FileInfo(
+            id=file.id,
+            file_name=file.file_name,
+            file_type=file.file_type,
+            file_size=file.file_size,
+            status=file.status,
+            created_at=file.created_at,
+            expires_at=file.expires_at,
+            analysis_result=file.analysis_result
+        )
+        for file in files
+    ]
+
+@app.get('/api/user/files/expiring')
+def get_expiring_files(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """獲取即將過期的檔案"""
+    expiring_files = get_expiring_files(db)
+    user_expiring_files = [f for f in expiring_files if f.user_id == current_user.id]
+    
+    return [
+        {
+            "id": file.id,
+            "file_name": file.file_name,
+            "file_type": file.file_type,
+            "expires_at": file.expires_at.isoformat(),
+            "hours_remaining": int((file.expires_at - datetime.utcnow()).total_seconds() / 3600)
+        }
+        for file in user_expiring_files
+    ]
+
+@app.delete('/api/user/files/{file_id}')
+def delete_user_file(file_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """刪除使用者檔案"""
+    file_record = db.query(UserFile).filter(
+        UserFile.id == file_id,
+        UserFile.user_id == current_user.id
+    ).first()
+    
+    if not file_record:
+        raise HTTPException(status_code=404, detail='檔案不存在')
+    
+    try:
+        # 刪除實體檔案
+        if os.path.exists(file_record.file_path):
+            os.remove(file_record.file_path)
+        
+        # 刪除資料庫記錄
+        db.delete(file_record)
+        db.commit()
+        
+        return {"message": "檔案已刪除"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'刪除失敗: {str(e)}')
+
+@app.post('/api/admin/cleanup-files')
+def cleanup_files_endpoint(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """清理過期檔案 (僅管理員)"""
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail='無權限')
+    
+    cleanup_expired_files(db)
+    return {"message": "過期檔案清理完成"}
 
 @app.get('/api/admin/daily-usage-summary')
 def admin_daily_usage_summary(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
