@@ -3,7 +3,7 @@
         <!-- Fixed Navbar -->
         <nav class="navbar navbar-expand-lg shadow-sm fixed-top" style="background: var(--color-dark);">
             <div class="container-fluid">
-                <router-link to="/admin" class="navbar-brand navbar-brand-custom mx-5">SlideAI</router-link>
+                <router-link to="/" class="navbar-brand navbar-brand-custom mx-5">SlideAI</router-link>
                 <div class="d-flex align-items-center mx-5">
                     <router-link to="/admin" class="navbar-brand navbar-brand-custom me-3"
                         :style="{ color: 'var(--color-primary)' }">管理者介面</router-link>

@@ -3,8 +3,8 @@
         <!-- Fixed Navbar -->
         <nav class="navbar navbar-expand-lg shadow-sm fixed-top" style="background: var(--color-dark);">
             <div class="container-fluid">
-                <a href="#hero" class="navbar-brand navbar-brand-custom mx-5"
-                    :style="{ color: 'var(--color-bg)' }">SlideAI</a>
+                <a href="#hero" class="navbar-brand navbar-brand-custom mx-5" :style="{ color: 'var(--color-bg)' }"
+                    @click.prevent="scrollToSection('hero')">SlideAI</a>
 
                 <div class="d-flex align-items-center mx-5">
                     <a href="#features" class="nav-link me-3" :style="{ color: 'var(--color-bg)' }"
