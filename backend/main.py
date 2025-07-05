@@ -48,10 +48,18 @@ def get_cors_origins():
         return ["*"]
     return [origin.strip() for origin in cors_origins.split(',')]
 
+# 明確設定 CORS 配置
+cors_origins = [
+    "https://awinlabnchu.github.io",  # GitHub Pages
+    "http://localhost:5173",          # Vite dev server
+    "http://localhost:3000",          # Alternative dev port
+    "*"                               # Allow all origins in development
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=get_cors_origins(),
-    allow_credentials=True,
+    allow_origins=cors_origins,
+    allow_credentials=False,  # Set to False when using "*" in origins
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"],
@@ -421,17 +429,16 @@ def health_check():
             "error": "無法獲取記憶體資訊"
         }
 
-# 處理 OPTIONS 請求（CORS 預檢）
-@app.options('/{full_path:path}')
-async def options_handler(full_path: str):
-    """處理 CORS 預檢請求"""
-    from fastapi.responses import Response
-    response = Response()
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    response.headers["Access-Control-Max-Age"] = "86400"
-    return response
+@app.get('/api/test-cors')
+def test_cors():
+    """測試 CORS 端點"""
+    return {
+        "message": "CORS test successful",
+        "timestamp": datetime.utcnow().isoformat(),
+        "cors_origins": cors_origins
+    }
+
+
 
 @app.get('/api/admin/daily-usage-summary')
 def admin_daily_usage_summary(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
