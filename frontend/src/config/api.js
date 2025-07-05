@@ -42,8 +42,12 @@ export const apiRequest = async (endpoint, options = {}) => {
 
   const defaultHeaders = {
     "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
   };
+
+  // 只有在沒有明確提供 Authorization header 時才使用 localStorage 的 token
+  if (!options.headers?.Authorization && token) {
+    defaultHeaders.Authorization = `Bearer ${token}`;
+  }
 
   const config = {
     ...options,
@@ -58,6 +62,13 @@ export const apiRequest = async (endpoint, options = {}) => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.error("API Error Details:", {
+        url,
+        status: response.status,
+        statusText: response.statusText,
+        errorData,
+        headers: Object.fromEntries(response.headers.entries()),
+      });
       throw new Error(
         errorData.detail || `HTTP error! status: ${response.status}`
       );
