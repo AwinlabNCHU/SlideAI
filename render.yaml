@@ -1,15 +1,34 @@
+# Render.com Web Service 配置
+# 請手動在 Render.com 創建 Web Service，然後設定以下環境變數
+
+# 環境變數設定 (在 Render.com 儀表板中設定):
+# DATABASE_URL: 從 PostgreSQL 服務獲取
+# SECRET_KEY: 生成一個強密碼
+# ALGORITHM: HS256
+# DAILY_USAGE_LIMIT: 5
+# CORS_ORIGINS: https://AwinlabNCHU.github.io,https://your-domain.com
+
+# 建置指令:
+# pip install -r requirements.txt
+
+# 啟動指令:
+# uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1
+
+# 健康檢查路徑:
+# /health
+
 services:
   - type: web
-    name: testapp-backend
+    name: SlideAI_BE
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: DATABASE_URL
         fromDatabase:
-          name: testapp-db
+          name: slideai-db
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
@@ -18,9 +37,14 @@ services:
       - key: DAILY_USAGE_LIMIT
         value: 5
       - key: CORS_ORIGINS
-        value: https://AwinlabNCHU.github.io/SlideAI,https://your-domain.com
+        value: https://AwinlabNCHU.github.io,https://your-domain.com
+    # 免費方案優化設定
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
 
 databases:
-  - name: testapp-db
-    databaseName: testapp
-    user: testapp_user
+  - name: slideai-db
+    databaseName: slideai
+    user: slideai_user
+    plan: free

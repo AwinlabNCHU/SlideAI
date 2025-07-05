@@ -17,6 +17,7 @@ import uuid
 from models import User, UsageRecord, Base  
 from datetime import datetime, date
 from fastapi import status
+import psutil
 
 load_dotenv()
 
@@ -24,6 +25,7 @@ DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///./test.db')
 SECRET_KEY = os.getenv('SECRET_KEY', 'devsecret')
 ALGORITHM = 'HS256'
 DAILY_USAGE_LIMIT = 5  # 每日使用次數限制
+MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB (免費方案限制)
 
 # 處理 Render.com 的 DATABASE_URL 格式
 if DATABASE_URL.startswith("postgres://"):
@@ -378,8 +380,28 @@ def admin_usage_statistics(token: str = Depends(oauth2_scheme), db: Session = De
 
 @app.get('/health')
 def health_check():
-    """健康檢查端點"""
-    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+    """健康檢查端點 - 包含記憶體使用情況"""
+    try:
+        memory = psutil.virtual_memory()
+        return {
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat(),
+            "memory_usage": {
+                "percent": memory.percent,
+                "available_mb": memory.available // 1024 // 1024,
+                "total_mb": memory.total // 1024 // 1024
+            },
+            "free_tier_info": {
+                "max_file_size_mb": MAX_FILE_SIZE // 1024 // 1024,
+                "daily_usage_limit": DAILY_USAGE_LIMIT
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat(),
+            "error": "無法獲取記憶體資訊"
+        }
 
 @app.get('/api/admin/daily-usage-summary')
 def admin_daily_usage_summary(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
