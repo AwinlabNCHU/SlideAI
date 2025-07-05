@@ -7,8 +7,10 @@
                     :style="{ color: 'var(--color-bg)' }">SlideAI</a>
 
                 <div class="d-flex align-items-center mx-5">
-                    <a href="#features" class="nav-link me-3" :style="{ color: 'var(--color-bg)' }">平台特色</a>
-                    <a href="#pricing" class="nav-link me-3" :style="{ color: 'var(--color-bg)' }">方案說明</a>
+                    <a href="#features" class="nav-link me-3" :style="{ color: 'var(--color-bg)' }"
+                        @click.prevent="scrollToSection('features')">平台特色</a>
+                    <a href="#pricing" class="nav-link me-3" :style="{ color: 'var(--color-bg)' }"
+                        @click.prevent="scrollToSection('pricing')">方案說明</a>
                     <router-link to="/login" class="btn me-2"
                         :style="{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }">登入</router-link>
                     <router-link to="/register" class="btn"
@@ -124,7 +126,8 @@
                     <h5 class="fw-bold">Discover</h5>
                     <ul class="list-unstyled">
                         <li><a href="#" class="footer-link">Get the app</a></li>
-                        <li><a href="#pricing" class="footer-link">Plans and Pricing</a></li>
+                        <li><a href="#pricing" class="footer-link" @click.prevent="scrollToSection('pricing')">Plans and
+                                Pricing</a></li>
                         <li><a href="#" class="footer-link">Help and Support</a></li>
                     </ul>
                 </div>
@@ -152,6 +155,8 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
+
 const features = [
     {
         title: "即時 AI 推理",
@@ -174,6 +179,29 @@ const features = [
         img: "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80"
     }
 ]
+
+// 平滑滾動到指定區塊
+const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId)
+    if (element) {
+        element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        })
+    }
+}
+
+// 處理 URL 中的錨點
+onMounted(() => {
+    // 檢查 URL 是否有錨點
+    const hash = window.location.hash
+    if (hash && hash !== '#/') {
+        const sectionId = hash.replace('#', '')
+        setTimeout(() => {
+            scrollToSection(sectionId)
+        }, 100)
+    }
+})
 </script>
 
 <style scoped>
