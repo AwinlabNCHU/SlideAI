@@ -1,5 +1,9 @@
 import { createApp } from "vue";
-import { createRouter, createWebHistory } from "vue-router";
+import {
+  createRouter,
+  createWebHistory,
+  createWebHashHistory,
+} from "vue-router";
 import App from "./App.vue";
 import routes from "./routes";
 import "./style.css";
@@ -18,8 +22,11 @@ const vuetify = createVuetify({
   },
 });
 
+// 根據環境選擇路由模式
+const isProduction = import.meta.env.PROD;
 const router = createRouter({
-  history: createWebHistory(),
+  // 生產環境使用 hash 模式，開發環境使用 history 模式
+  history: isProduction ? createWebHashHistory() : createWebHistory(),
   routes,
 });
 

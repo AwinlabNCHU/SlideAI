@@ -30,4 +30,7 @@ export default defineConfig({
   optimizeDeps: {
     include: ["vue", "vue-router", "vuetify"],
   },
+  define: {
+    __VUE_PROD_DEVTOOLS__: false,
+  },
 });
