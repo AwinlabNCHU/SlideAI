@@ -438,6 +438,36 @@ def test_cors():
         "cors_origins": cors_origins
     }
 
+@app.post('/api/admin/set-admin')
+def set_admin_user(email: str, db: Session = Depends(get_db)):
+    """設定管理員端點 (僅用於初始設定)"""
+    # 注意：這個端點應該在設定完成後移除
+    user = db.query(User).filter_by(email=email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail='使用者不存在')
+    
+    if user.is_admin:
+        return {"message": f"使用者 {email} 已經是管理員了"}
+    
+    user.is_admin = True
+    db.commit()
+    return {"message": f"成功將 {email} 設定為管理員"}
+
+@app.get('/api/admin/list-users')
+def list_users(db: Session = Depends(get_db)):
+    """列出所有使用者 (僅用於初始設定)"""
+    # 注意：這個端點應該在設定完成後移除
+    users = db.query(User).all()
+    return [
+        {
+            "id": user.id,
+            "email": user.email,
+            "is_admin": user.is_admin,
+            "created_at": user.created_at.isoformat()
+        }
+        for user in users
+    ]
+
 
 
 @app.get('/api/admin/daily-usage-summary')

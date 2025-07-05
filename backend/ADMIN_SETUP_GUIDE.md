@@ -1,175 +1,135 @@
-# 管理員設定指南
+# 🔧 SlideAI 管理員設定指南
 
-## 概述
+本指南將幫助你在 Render.com 的資料庫中設定管理員權限。
 
-SlideAI 系統支援管理員權限，管理員可以：
-- 無限制使用所有 AI 功能（不受每日使用次數限制）
-- 訪問管理員介面查看用戶統計
-- 查看系統使用情況
+## 📋 前置需求
 
-## 創建管理員用戶
+1. ✅ 已部署 SlideAI 後端到 Render.com
+2. ✅ 已設定 PostgreSQL 資料庫
+3. ✅ 至少有一個已註冊的使用者帳號
 
-### 方法一：使用腳本（推薦）
+## 🚀 方法一：使用 Render.com Shell (推薦)
 
-1. **進入後端目錄**：
-   ```bash
-   cd backend
-   ```
+### 步驟 1: 部署管理員工具
+```bash
+cd backend
+chmod +x deploy_admin_tools.sh
+./deploy_admin_tools.sh
+```
 
-2. **執行管理員創建腳本**：
-   ```bash
-   python create_admin.py
-   ```
+### 步驟 2: 使用 Render.com Shell
+1. 前往 [Render.com 儀表板](https://dashboard.render.com)
+2. 點擊你的後端服務 (例如: `slideai-backend`)
+3. 點擊 `Shell` 標籤
+4. 等待 Shell 載入完成
 
-3. **按照提示輸入**：
-   - 管理員 Email
-   - 管理員密碼
+### 步驟 3: 執行管理員設定腳本
+```bash
+# 快速設定 (自動選擇第一個非管理員使用者)
+python set_admin_render.py
 
-### 方法二：手動創建
+# 或使用完整版腳本 (可選擇特定使用者)
+python set_admin.py
+```
 
-如果您想要手動創建管理員用戶，可以使用以下方法：
+### 步驟 4: 確認設定
+腳本會顯示所有使用者列表，確認管理員權限已正確設定。
 
-#### 本地開發環境
+## 🛠️ 方法二：直接 SQL 查詢
 
-1. **啟動後端服務**：
-   ```bash
-   cd backend
-   uvicorn main:app --reload
-   ```
+### 步驟 1: 連接資料庫
+1. 前往 [Render.com 儀表板](https://dashboard.render.com)
+2. 點擊你的 PostgreSQL 資料庫
+3. 點擊 `Connect` 標籤
+4. 複製連接資訊
 
-2. **註冊普通用戶**：
-   - 訪問前端註冊頁面
-   - 註冊一個新帳戶
+### 步驟 2: 執行 SQL 查詢
+```sql
+-- 查看所有使用者
+SELECT id, email, is_admin, created_at FROM users;
 
-3. **直接修改資料庫**：
-   ```bash
-   # 使用 SQLite 瀏覽器或命令行
-   sqlite3 test.db
-   UPDATE users SET is_admin = 1 WHERE email = 'your-email@example.com';
-   ```
+-- 設定特定使用者為管理員 (替換 email)
+UPDATE users SET is_admin = true WHERE email = 'your-email@example.com';
 
-#### 生產環境 (Render.com)
+-- 確認更新
+SELECT id, email, is_admin FROM users WHERE email = 'your-email@example.com';
+```
 
-1. **連接到 Render.com 資料庫**：
-   - 在 Render.com 控制台找到您的 PostgreSQL 資料庫
-   - 使用提供的連接資訊
+## 🔍 方法三：使用 psql 命令列
 
-2. **執行 SQL 命令**：
-   ```sql
-   UPDATE users SET is_admin = true WHERE email = 'your-email@example.com';
-   ```
+### 步驟 1: 獲取資料庫連接資訊
+在 Render.com 資料庫頁面找到以下資訊：
+- Host
+- Database
+- Username
+- Password
+- Port
 
-## 管理員功能
+### 步驟 2: 連接資料庫
+```bash
+psql "postgresql://username:password@host:port/database"
+```
 
-### 前端管理員介面
+### 步驟 3: 執行查詢
+```sql
+-- 查看使用者
+SELECT * FROM users;
 
-管理員登入後可以訪問：
-- `/admin` - 管理員儀表板
-- 查看用戶統計
-- 查看使用情況
-- 查看系統狀態
+-- 設定管理員
+UPDATE users SET is_admin = true WHERE email = 'your-email@example.com';
 
-### 管理員權限
+-- 確認
+SELECT email, is_admin FROM users;
+```
 
-1. **無限制使用**：
-   - 不受每日使用次數限制
-   - 可以無限次使用 AI 功能
+## ✅ 驗證管理員權限
 
-2. **管理功能**：
-   - 查看所有用戶列表
-   - 查看使用統計
-   - 查看系統狀態
+### 方法 1: 透過前端測試
+1. 使用管理員帳號登入
+2. 檢查是否出現 "管理者介面" 連結
+3. 點擊進入管理員儀表板
 
-## 安全注意事項
+### 方法 2: 透過 API 測試
+```bash
+# 登入獲取 token
+curl -X POST https://slideai.onrender.com/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "your-email@example.com", "password": "your-password"}'
 
-1. **強密碼**：
-   - 管理員密碼應該足夠複雜
-   - 建議使用 12 位以上的密碼
-   - 包含大小寫字母、數字和特殊字符
+# 使用 token 檢查管理員狀態
+curl -X GET https://slideai.onrender.com/api/me \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
 
-2. **定期更換**：
-   - 定期更換管理員密碼
-   - 不要在多個系統使用相同密碼
+## 🚨 常見問題
 
-3. **訪問控制**：
-   - 限制管理員帳戶的訪問
-   - 只在必要時使用管理員權限
+### Q: 找不到使用者怎麼辦？
+A: 確保已經註冊帳號，然後再執行管理員設定腳本。
 
-## 故障排除
+### Q: 資料庫連接失敗？
+A: 檢查 DATABASE_URL 環境變數是否正確設定。
 
-### 問題：無法創建管理員用戶
+### Q: 權限不足？
+A: 確保使用的是資料庫擁有者的帳號。
 
-**可能原因**：
-- 資料庫連接問題
-- 環境變數設定錯誤
-- 權限不足
+### Q: 設定後前端沒有反應？
+A: 清除瀏覽器快取，重新登入。
 
-**解決方案**：
-1. 檢查 `DATABASE_URL` 環境變數
-2. 確認資料庫連接正常
-3. 檢查錯誤日誌
+## 🔐 安全注意事項
 
-### 問題：管理員登入後看不到管理員介面
+1. **定期更換密碼**: 管理員帳號密碼應定期更換
+2. **限制管理員數量**: 只設定必要的人員為管理員
+3. **監控使用情況**: 定期檢查管理員活動
+4. **備份資料**: 重要操作前先備份資料庫
 
-**可能原因**：
-- `is_admin` 欄位未正確設定
-- 前端緩存問題
+## 📞 支援
 
-**解決方案**：
-1. 確認資料庫中 `is_admin = true`
-2. 清除瀏覽器緩存
-3. 重新登入
+如果遇到問題，請檢查：
+1. Render.com 服務日誌
+2. 資料庫連接狀態
+3. 環境變數設定
+4. 網路連接
 
-### 問題：管理員功能無法使用
+---
 
-**可能原因**：
-- API 端點權限問題
-- 前端路由問題
-
-**解決方案**：
-1. 檢查後端 API 是否正常
-2. 確認前端路由設定
-3. 檢查瀏覽器開發者工具錯誤
-
-## 開發環境測試
-
-在本地開發環境中測試管理員功能：
-
-1. **創建管理員用戶**：
-   ```bash
-   cd backend
-   python create_admin.py
-   ```
-
-2. **啟動後端**：
-   ```bash
-   uvicorn main:app --reload
-   ```
-
-3. **啟動前端**：
-   ```bash
-   cd frontend
-   npm run dev
-   ```
-
-4. **測試登入**：
-   - 使用管理員帳戶登入
-   - 確認可以看到管理員介面
-   - 測試管理員功能
-
-## 生產環境部署
-
-在 Render.com 上部署後：
-
-1. **連接到生產資料庫**：
-   - 使用 Render.com 提供的資料庫連接資訊
-
-2. **創建管理員用戶**：
-   ```bash
-   # 在本地執行，但連接到生產資料庫
-   DATABASE_URL="your-production-database-url" python create_admin.py
-   ```
-
-3. **驗證功能**：
-   - 使用管理員帳戶登入生產環境
-   - 確認所有功能正常運作 
+**注意**: 管理員權限具有重要功能，請謹慎設定！ 
