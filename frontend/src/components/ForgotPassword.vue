@@ -31,6 +31,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { apiRequest, API_ENDPOINTS } from '../config/api.js'
 
 const email = ref('')
 const message = ref('')
@@ -40,13 +41,10 @@ const submit = async () => {
     error.value = ''
     message.value = ''
     try {
-        const res = await fetch('http://localhost:8000/api/forgot-password', {
+        const data = await apiRequest(API_ENDPOINTS.FORGOT_PASSWORD, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: email.value })
         })
-        if (!res.ok) throw new Error('寄送失敗')
-        const data = await res.json()
         message.value = data.detail || '請檢查信箱（開發模式下 token 會顯示）'
         if (data.reset_token) message.value += `\n重設 token: ${data.reset_token}`
     } catch (e) {

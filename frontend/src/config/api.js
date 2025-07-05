@@ -1,38 +1,28 @@
-// API 配置
-const API_CONFIG = {
-  // 開發環境
-  development: {
-    baseURL: "http://localhost:8000",
-  },
-  // 生產環境 (GitHub Pages)
-  production: {
-    baseURL:
-      import.meta.env.VITE_API_URL || "https://SlideAI_BE.onrender.com",
-  },
+// API 配置文件
+// 根據環境變數決定使用哪個 API URL
+
+const getApiUrl = () => {
+  // 開發環境使用 localhost
+  if (import.meta.env.DEV) {
+    return "http://localhost:8000";
+  }
+
+  // 生產環境使用環境變數或預設值
+  return import.meta.env.VITE_API_URL || "https://slideai.onrender.com";
 };
 
-// 根據環境獲取配置
-const env = import.meta.env.MODE || "development";
-const config = API_CONFIG[env];
-
-// API 基礎 URL
-export const API_BASE_URL = config.baseURL;
+export const API_BASE_URL = getApiUrl();
 
 // API 端點
 export const API_ENDPOINTS = {
-  // 認證相關
   LOGIN: "/api/login",
   REGISTER: "/api/register",
   ME: "/api/me",
   FORGOT_PASSWORD: "/api/forgot-password",
   RESET_PASSWORD: "/api/reset-password",
-
-  // 功能相關
+  USAGE_STATUS: "/api/usage-status",
   VIDEO_ABSTRACT: "/api/video-abstract",
   PPT_TO_VIDEO: "/api/ppt-to-video",
-  USAGE_STATUS: "/api/usage-status",
-
-  // 管理員相關
   ADMIN_USER_COUNT: "/api/admin/user-count",
   ADMIN_USER_TOTAL: "/api/admin/user-total",
   ADMIN_USER_LIST: "/api/admin/user-list",
@@ -40,20 +30,42 @@ export const API_ENDPOINTS = {
   ADMIN_DAILY_USAGE_SUMMARY: "/api/admin/daily-usage-summary",
 };
 
-// 完整的 API URL
-export const getApiUrl = (endpoint) => `${API_BASE_URL}${endpoint}`;
-
-// 預設請求配置
-export const defaultRequestConfig = {
-  headers: {
-    "Content-Type": "application/json",
-  },
+// 創建完整的 API URL
+export const getApiEndpoint = (endpoint) => {
+  return `${API_BASE_URL}${endpoint}`;
 };
 
-// 帶認證的請求配置
-export const getAuthRequestConfig = (token) => ({
-  headers: {
+// 通用的 fetch 函數
+export const apiRequest = async (endpoint, options = {}) => {
+  const url = getApiEndpoint(endpoint);
+  const token = localStorage.getItem("token");
+
+  const defaultHeaders = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  },
-});
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+
+  const config = {
+    ...options,
+    headers: {
+      ...defaultHeaders,
+      ...options.headers,
+    },
+  };
+
+  try {
+    const response = await fetch(url, config);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.detail || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("API request failed:", error);
+    throw error;
+  }
+};

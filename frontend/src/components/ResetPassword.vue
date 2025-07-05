@@ -15,6 +15,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { apiRequest, API_ENDPOINTS } from '../config/api.js'
 
 const token = ref('')
 const password = ref('')
@@ -30,12 +31,10 @@ const submit = async () => {
         return
     }
     try {
-        const res = await fetch('http://localhost:8000/api/reset-password', {
+        await apiRequest(API_ENDPOINTS.RESET_PASSWORD, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: token.value, password: password.value })
         })
-        if (!res.ok) throw new Error('重設失敗')
         message.value = '密碼已重設，請重新登入'
     } catch (e) {
         error.value = e.message

@@ -46,8 +46,8 @@
                         <div class="ppt-upload-content text-center">
                             <div v-if="!pdfFile">
                                 <span class="ppt-upload-icon">📄</span>
-                                <div class="ppt-upload-text">點擊或拖曳 PDF 檔案到這裡</div>
-                                <div class="ppt-upload-tip">支援 PDF，最大 20MB</div>
+                                <div class="ppt-upload-text">點擊或拖曳PDF檔案到這裡</div>
+                                <div class="ppt-upload-tip">支援 PDF 格式，最大 50MB</div>
                             </div>
                             <div v-else>
                                 <span class="ppt-upload-icon">✅</span>
@@ -57,17 +57,24 @@
                     </label>
                     <button class="btn btn-dark-main w-100 py-2" type="submit" :disabled="!pdfFile || loading">
                         <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
-                        {{ loading ? '上傳中...' : '上傳並生成影片' }}
+                        {{ loading ? '生成中...' : '生成語音簡報' }}
                     </button>
                 </form>
-                <div v-if="videoUrl" class="mt-4 text-center ppt-preview-area">
-                    <video :src="videoUrl" controls
-                        style="max-width: 100%; height: 240px; border-radius: 0.7rem;"></video>
-                    <div class="mt-2">
-                        <a :href="videoUrl" download="ai_presentation.mp4" class="btn btn-dark-main">下載影片</a>
+
+                <!-- 影片預覽區域 -->
+                <div v-if="videoUrl" class="ppt-preview-area">
+                    <h6 class="text-center mb-3" style="color: #b0bed9;">生成的語音簡報</h6>
+                    <video controls class="w-100" style="border-radius: 0.5rem;">
+                        <source :src="videoUrl" type="video/mp4">
+                        您的瀏覽器不支援影片播放。
+                    </video>
+                    <div class="d-flex justify-content-center mt-3">
+                        <a :href="videoUrl" download="ai-presentation.mp4" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-download me-1"></i>下載影片
+                        </a>
                     </div>
                 </div>
-                <div v-if="loading" class="alert alert-info mt-3 text-center ppt-result">AI 生成中，請稍候...</div>
+
                 <div v-if="error" class="alert alert-danger mt-3 text-center ppt-result">{{ error }}</div>
             </div>
         </div>
@@ -77,6 +84,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { ref, onMounted } from 'vue'
+import { apiRequest, API_ENDPOINTS, getApiEndpoint } from '../config/api.js'
 
 const router = useRouter()
 const pdfFile = ref(null)
@@ -97,27 +105,18 @@ const logout = () => {
 }
 
 const fetchMe = async () => {
-    const token = localStorage.getItem('token')
-    if (!token) return
-    const res = await fetch('http://localhost:8000/api/me', {
-        headers: { 'Authorization': 'Bearer ' + token }
-    })
-    if (res.ok) {
-        const me = await res.json()
+    try {
+        const me = await apiRequest(API_ENDPOINTS.ME)
         isAdmin.value = !!me.is_admin
+    } catch (error) {
+        console.error('獲取用戶資訊失敗:', error)
     }
 }
 
 const fetchUsageStatus = async () => {
     if (isAdmin.value) return
     try {
-        const token = localStorage.getItem('token')
-        const response = await fetch('http://localhost:8000/api/usage-status', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        })
-        if (response.ok) {
-            usageStatus.value = await response.json()
-        }
+        usageStatus.value = await apiRequest(API_ENDPOINTS.USAGE_STATUS)
     } catch (error) {
         console.error('獲取使用狀態失敗:', error)
     }
@@ -126,6 +125,7 @@ const fetchUsageStatus = async () => {
 const onPdfChange = (e) => {
     pdfFile.value = e.target.files[0]
 }
+
 const onDrop = (e) => {
     const files = e.dataTransfer.files
     if (files && files.length > 0) {
@@ -147,7 +147,8 @@ const handlePdfUpload = async () => {
 
     try {
         const token = localStorage.getItem('token')
-        const res = await fetch('http://localhost:8000/api/ppt-to-video', {
+        const url = getApiEndpoint(API_ENDPOINTS.PPT_TO_VIDEO)
+        const res = await fetch(url, {
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + token
@@ -279,10 +280,6 @@ onMounted(async () => {
 
     .ppt-upload-area {
         padding: 20px 4px;
-    }
-
-    .ppt-preview-area {
-        padding: 12px 4px;
     }
 }
 </style>

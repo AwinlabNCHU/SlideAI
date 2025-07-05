@@ -40,6 +40,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { apiRequest, API_ENDPOINTS } from '../config/api.js'
 
 const email = ref('')
 const password = ref('')
@@ -49,20 +50,20 @@ const router = useRouter()
 const login = async () => {
     error.value = ''
     try {
-        const res = await fetch('http://localhost:8000/api/login', {
+        const data = await apiRequest(API_ENDPOINTS.LOGIN, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: email.value, password: password.value })
         })
-        if (!res.ok) throw new Error('登入失敗')
-        const data = await res.json()
+
         localStorage.setItem('token', data.access_token)
+
         // 取得 user info
-        const meRes = await fetch('http://localhost:8000/api/me', {
+        const me = await apiRequest(API_ENDPOINTS.ME, {
             headers: { 'Authorization': 'Bearer ' + data.access_token }
         })
-        const me = await meRes.json()
+
         localStorage.setItem('user', JSON.stringify(me))
+
         if (me.is_admin) {
             await router.push('/admin')
         } else {

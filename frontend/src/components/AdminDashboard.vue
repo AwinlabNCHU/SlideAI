@@ -155,6 +155,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { apiRequest, API_ENDPOINTS } from '../config/api.js'
 
 const router = useRouter()
 const userCount = ref('...')
@@ -175,44 +176,23 @@ const logout = () => {
 }
 
 onMounted(async () => {
-    const token = localStorage.getItem('token')
-
     try {
         // 今日使用摘要
-        const summaryRes = await fetch('http://localhost:8000/api/admin/daily-usage-summary', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        })
-        if (summaryRes.ok) {
-            dailySummary.value = await summaryRes.json()
-        }
+        dailySummary.value = await apiRequest(API_ENDPOINTS.ADMIN_DAILY_USAGE_SUMMARY)
 
         // 使用統計
-        const statsRes = await fetch('http://localhost:8000/api/admin/usage-statistics', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        })
-        if (statsRes.ok) {
-            usageStatistics.value = await statsRes.json()
-        }
+        usageStatistics.value = await apiRequest(API_ENDPOINTS.ADMIN_USAGE_STATISTICS)
 
         // 今年註冊人數
-        const res = await fetch('http://localhost:8000/api/admin/user-count', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        })
-        const data = await res.json()
+        const data = await apiRequest(API_ENDPOINTS.ADMIN_USER_COUNT)
         userCount.value = data.count
 
         // 總用戶數
-        const res2 = await fetch('http://localhost:8000/api/admin/user-total', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        })
-        const data2 = await res2.json()
+        const data2 = await apiRequest(API_ENDPOINTS.ADMIN_USER_TOTAL)
         userTotal.value = data2.count
 
         // 用戶列表
-        const res3 = await fetch('http://localhost:8000/api/admin/user-list', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        })
-        users.value = await res3.json()
+        users.value = await apiRequest(API_ENDPOINTS.ADMIN_USER_LIST)
     } catch (error) {
         console.error('獲取管理數據失敗:', error)
     }

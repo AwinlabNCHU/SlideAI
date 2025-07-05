@@ -55,6 +55,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { apiRequest, API_ENDPOINTS } from '../config/api.js'
 
 const email = ref('')
 const password = ref('')
@@ -69,12 +70,10 @@ const register = async () => {
         return
     }
     try {
-        const res = await fetch('http://localhost:8000/api/register', {
+        await apiRequest(API_ENDPOINTS.REGISTER, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: email.value, password: password.value })
         })
-        if (!res.ok) throw new Error('註冊失敗')
         await router.push('/login')
     } catch (e) {
         error.value = e.message

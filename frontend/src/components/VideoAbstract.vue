@@ -69,6 +69,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { apiRequest, API_ENDPOINTS, getApiEndpoint } from '../config/api.js'
 
 const router = useRouter()
 const videoFile = ref(null)
@@ -89,27 +90,18 @@ const logout = () => {
 }
 
 const fetchMe = async () => {
-    const token = localStorage.getItem('token')
-    if (!token) return
-    const res = await fetch('http://localhost:8000/api/me', {
-        headers: { 'Authorization': 'Bearer ' + token }
-    })
-    if (res.ok) {
-        const me = await res.json()
+    try {
+        const me = await apiRequest(API_ENDPOINTS.ME)
         isAdmin.value = !!me.is_admin
+    } catch (error) {
+        console.error('獲取用戶資訊失敗:', error)
     }
 }
 
 const fetchUsageStatus = async () => {
     if (isAdmin.value) return
     try {
-        const token = localStorage.getItem('token')
-        const response = await fetch('http://localhost:8000/api/usage-status', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        })
-        if (response.ok) {
-            usageStatus.value = await response.json()
-        }
+        usageStatus.value = await apiRequest(API_ENDPOINTS.USAGE_STATUS)
     } catch (error) {
         console.error('獲取使用狀態失敗:', error)
     }
@@ -138,7 +130,8 @@ const handleUpload = async () => {
     formData.append('file', videoFile.value)
     try {
         const token = localStorage.getItem('token')
-        const res = await fetch('http://localhost:8000/api/video-abstract', {
+        const url = getApiEndpoint(API_ENDPOINTS.VIDEO_ABSTRACT)
+        const res = await fetch(url, {
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + token
