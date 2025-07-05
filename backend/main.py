@@ -55,6 +55,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["*"],
+    max_age=86400,  # Cache preflight for 24 hours
 )
 
 def get_db():
@@ -424,7 +425,13 @@ def health_check():
 @app.options('/{full_path:path}')
 async def options_handler(full_path: str):
     """處理 CORS 預檢請求"""
-    return {"message": "OK"}
+    from fastapi.responses import Response
+    response = Response()
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Max-Age"] = "86400"
+    return response
 
 @app.get('/api/admin/daily-usage-summary')
 def admin_daily_usage_summary(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
