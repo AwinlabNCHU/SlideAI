@@ -65,8 +65,8 @@ const route = useRoute()
 const isDev = computed(() => import.meta.env.DEV)
 const apiBaseUrl = computed(() => API_BASE_URL)
 const currentRoute = computed(() => route.path)
-const token = computed(() => localStorage.getItem('token'))
-const user = computed(() => localStorage.getItem('user'))
+const token = ref(localStorage.getItem('token'))
+const user = ref(localStorage.getItem('user'))
 
 // 在開發環境中自動顯示調試面板
 onMounted(() => {
@@ -104,7 +104,8 @@ const testApiConnection = async () => {
         const response = await fetch(`${apiBaseUrl.value}/api/me`, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         })
 
@@ -129,7 +130,10 @@ const testLogin = async () => {
                 password: 'testpassword'
             })
         })
-
+        localStorage.setItem('token', response.access_token)
+        localStorage.setItem('user', JSON.stringify(response.user))
+        token.value = response.access_token
+        user.value = JSON.stringify(response.user)
         testResult.value = `登入測試成功:\n${JSON.stringify(response, null, 2)}`
     } catch (error) {
         testResult.value = `登入測試失敗: ${error.message}`
@@ -158,6 +162,8 @@ const testRegister = async () => {
 const clearStorage = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
+    token.value = null
+    user.value = null
     testResult.value = '本地儲存已清除'
 }
 </script>

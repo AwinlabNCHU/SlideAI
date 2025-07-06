@@ -8,7 +8,7 @@ from sqlalchemy import create_engine, Column, Integer, String, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from passlib.context import CryptContext
-from jose import jwt, JWTError
+from jose import jwt, JWTError, ExpiredSignatureError
 import os
 import secrets
 from dotenv import load_dotenv
@@ -87,10 +87,26 @@ def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
 def create_access_token(data: dict):
-    return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
+    # 加上過期時間 (24小時)
+    expire = datetime.utcnow() + timedelta(hours=24)
+    to_encode = data.copy()
+    to_encode.update({"exp": expire})
+    token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    print(f"[DEBUG] Created token for {data.get('sub', 'unknown')}: {token[:20]}...")
+    return token
 
 def decode_access_token(token: str):
-    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    print(f"[DEBUG] decode_access_token called with token: {token[:20]}...")
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        print(f"[DEBUG] Token decoded successfully: {payload}")
+        return payload
+    except ExpiredSignatureError:
+        print("[DEBUG] Token expired")
+        raise HTTPException(status_code=401, detail='Token 已過期')
+    except JWTError as e:
+        print(f"[DEBUG] JWT decode error: {str(e)}")
+        raise HTTPException(status_code=401, detail='Token 無效')
 
 def cleanup_cache():
     """清理過期的快取項目（5分鐘過期）"""
@@ -106,27 +122,39 @@ def cleanup_cache():
         cache_timestamps.pop(key, None)
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    print(f"[DEBUG] get_current_user called with token: {token[:20]}...")
     try:
         payload = decode_access_token(token)
+        print(f"[DEBUG] Token decoded successfully, payload: {payload}")
         email = payload.get('sub')
+        if not email:
+            print("[DEBUG] No email found in token payload")
+            raise HTTPException(status_code=401, detail='Token 格式錯誤')
         
+        print(f"[DEBUG] Looking for user with email: {email}")
         # 定期清理快取
         cleanup_cache()
         
         # 檢查快取
         if email in user_cache:
+            print(f"[DEBUG] User found in cache: {email}")
             return user_cache[email]
         
         user = db.query(User).filter_by(email=email).first()
         if not user:
+            print(f"[DEBUG] User not found in database: {email}")
             raise HTTPException(status_code=401, detail='使用者不存在')
         
+        print(f"[DEBUG] User found in database: {email}, is_admin: {user.is_admin}")
         # 存入快取（5分鐘過期）
         user_cache[email] = user
         cache_timestamps[email] = datetime.utcnow()
         return user
-    except JWTError:
-        raise HTTPException(status_code=401, detail='Token 無效')
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[DEBUG] Unexpected error in get_current_user: {str(e)}")
+        raise HTTPException(status_code=401, detail=f'驗證失敗: {str(e)}')
 
 def check_daily_usage_limit(user: User, db: Session):
     """檢查使用者今日使用次數是否超過限制，管理者不受限"""
@@ -238,12 +266,15 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
 
 @app.post('/api/login')
 def login(req: LoginRequest, db: Session = Depends(get_db)):
+    print(f"[DEBUG] Login attempt for email: {req.email}")
     user = db.query(User).filter_by(email=req.email).first()
     if not user or not verify_password(req.password, user.hashed_password):
+        print(f"[DEBUG] Login failed for email: {req.email}")
         raise HTTPException(status_code=401, detail='帳號或密碼錯誤')
     
     # 直接返回用戶信息，避免額外的 API 調用
     token = create_access_token({"sub": user.email})
+    print(f"[DEBUG] Login successful for email: {req.email}, token: {token[:20]}...")
     return {
         "access_token": token, 
         "token_type": "bearer",
@@ -278,14 +309,9 @@ def reset_password(req: ResetPasswordRequest, db: Session = Depends(get_db)):
     return {"msg": "密碼已重設"}
 
 @app.get('/api/me')
-def get_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    try:
-        payload = decode_access_token(token)
-        email = payload.get('sub')
-        user = db.query(User).filter_by(email=email).first()
-        return {"email": email, "is_admin": user.is_admin}
-    except JWTError:
-        raise HTTPException(status_code=401, detail='Token 無效')
+def get_me(current_user: User = Depends(get_current_user)):
+    print(f"[DEBUG] /api/me called successfully for user: {current_user.email}")
+    return {"email": current_user.email, "is_admin": current_user.is_admin}
 
 @app.get('/api/usage-status')
 def get_usage_status(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
