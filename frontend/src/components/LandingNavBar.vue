@@ -6,13 +6,19 @@
                 @click.prevent="handleLogoClick">SlideAI</router-link>
             <!-- 大螢幕橫排選單 -->
             <div class="d-none d-lg-flex ms-auto align-items-center">
-                <a href="#features" class="nav-link mx-2" style="color: #fff;"
+                <router-link to="/" class=" nav-link mx-2 fw-bold" style="color: #fff;"
+                    @click.prevent="handleFeatureClick">平台特色</router-link>
+                <router-link to="/" class=" nav-link mx-2 fw-bold" style="color: #fff;"
+                    @click.prevent="handlePriceClick">方案說明</router-link>
+
+                <!-- <a href="#features" class="nav-link mx-2" style="color: #fff;"
                     @click.prevent="scrollToSection('features')">平台特色</a>
                 <a href="#pricing" class="nav-link mx-2" style="color: #fff;"
-                    @click.prevent="scrollToSection('pricing')">方案說明</a>
-                <router-link to="/login" class="btn me-2 mx-2"
+                    @click.prevent="scrollToSection('pricing')">方案說明</a> -->
+
+                <router-link to="/login" class="btn mx-2 fw-bold"
                     style="border-color: var(--color-primary); color: #fff;">登入</router-link>
-                <router-link to="/register" class="btn mx-2"
+                <router-link to="/register" class="btn mx-2 fw-bold"
                     style="background: var(--color-primary); color: #fff;">註冊</router-link>
             </div>
 
@@ -83,6 +89,31 @@ const handleLogoClick = () => {
         }
     } else {
         router.push('/')
+    }
+}
+const handleFeatureClick = () => {
+    if (route.path === '/') {
+        const features = document.getElementById('features')
+        if (features) {
+            features.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+        }
+    } else {
+        router.push({ path: '/', hash: '#features' })
+    }
+}
+
+const handlePriceClick = () => {
+    if (route.path === '/') {
+        const pricing = document.getElementById('pricing')
+        if (pricing) {
+            pricing.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+        }
+    } else {
+        router.push({ path: '/', hash: '#pricing' })
     }
 }
 </script>

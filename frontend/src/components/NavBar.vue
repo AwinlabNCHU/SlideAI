@@ -23,7 +23,7 @@
             </div>
 
             <!-- 小螢幕 dropdown -->
-            <div class="dropdown d-lg-none ms-auto" style="position: relative;">
+            <div class="dropdown d-xl-none ms-auto" style="position: relative;">
                 <button class="btn btn-outline-light" type="button" @click="toggleDropdown" ref="dropdownBtn">
                     <span class="navbar-toggler-icon"></span>
                 </button>

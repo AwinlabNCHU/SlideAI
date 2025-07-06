@@ -137,7 +137,8 @@
 
 <script setup>
 import LandingNavBar from './LandingNavBar.vue'
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
 const features = [
     {
@@ -162,6 +163,8 @@ const features = [
     }
 ]
 
+const route = useRoute()
+
 // 平滑滾動到指定區塊
 const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId)
@@ -176,9 +179,19 @@ const scrollToSection = (sectionId) => {
 // 處理 URL 中的錨點
 onMounted(() => {
     // 檢查 URL 是否有錨點
-    const hash = window.location.hash
+    const hash = route.hash || window.location.hash
     if (hash && hash !== '#/') {
         const sectionId = hash.replace('#', '')
+        setTimeout(() => {
+            scrollToSection(sectionId)
+        }, 100)
+    }
+})
+
+// 監聽 hash 變化（例如 router-link 切換時）
+watch(() => route.hash, (newHash) => {
+    if (newHash && newHash !== '#/') {
+        const sectionId = newHash.replace('#', '')
         setTimeout(() => {
             scrollToSection(sectionId)
         }, 100)
