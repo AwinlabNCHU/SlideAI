@@ -9,15 +9,15 @@
 
             <!-- 大螢幕橫排選單 -->
             <div class="d-none d-lg-flex ms-auto align-items-center">
-                <router-link v-if="isAdmin" to="/admin" class="nav-link" :style="{ color: 'var(--color-primary)' }"
+                <router-link v-if="isAdmin" to="/admin" class="nav-link mx-2" style="color: #fff;"
                     @click="handleNavClick">管理者介面</router-link>
-                <router-link v-else to="/dashboard" class="nav-link" :style="{ color: 'var(--color-primary)' }"
+                <router-link v-else to="/dashboard" class="nav-link mx-2" style="color: #fff;"
                     @click="handleNavClick">介面</router-link>
-                <router-link to="/video-abstract" class="nav-link" :style="{ color: 'var(--color-primary)' }"
+                <router-link to="/video-abstract" class="nav-link mx-2" style="color: #fff;"
                     @click="handleNavClick">AI影片摘要</router-link>
-                <router-link to="/ppt-generator" class="nav-link" :style="{ color: 'var(--color-primary)' }"
+                <router-link to="/ppt-generator" class="nav-link mx-2" style="color: #fff;"
                     @click="handleNavClick">AI語音簡報</router-link>
-                <router-link to="/files" class="nav-link" :style="{ color: 'var(--color-primary)' }"
+                <router-link to="/files" class="nav-link mx-2" style="color: #fff;"
                     @click="handleNavClick">檔案管理</router-link>
                 <button class="btn btn-outline-light ms-lg-3 mt-2 mt-lg-0" @click="logout">登出</button>
             </div>

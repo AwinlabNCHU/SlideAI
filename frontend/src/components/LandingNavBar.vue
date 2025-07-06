@@ -6,14 +6,14 @@
                 @click.prevent="handleLogoClick">SlideAI</router-link>
             <!-- 大螢幕橫排選單 -->
             <div class="d-none d-lg-flex ms-auto align-items-center">
-                <a href="#features" class="nav-link" style="color: var(--color-bg);"
+                <a href="#features" class="nav-link mx-2" style="color: #fff;"
                     @click.prevent="scrollToSection('features')">平台特色</a>
-                <a href="#pricing" class="nav-link" style="color: var(--color-bg);"
+                <a href="#pricing" class="nav-link mx-2" style="color: #fff;"
                     @click.prevent="scrollToSection('pricing')">方案說明</a>
-                <router-link to="/login" class="btn me-2"
-                    style="border-color: var(--color-primary); color: var(--color-primary);">登入</router-link>
-                <router-link to="/register" class="btn"
-                    style="background: var(--color-primary); color: white;">註冊</router-link>
+                <router-link to="/login" class="btn me-2 mx-2"
+                    style="border-color: var(--color-primary); color: #fff;">登入</router-link>
+                <router-link to="/register" class="btn mx-2"
+                    style="background: var(--color-primary); color: #fff;">註冊</router-link>
             </div>
 
             <!-- 小螢幕 dropdown -->
