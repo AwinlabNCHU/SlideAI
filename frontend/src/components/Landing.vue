@@ -1,24 +1,6 @@
 <template>
     <div>
-        <!-- Fixed Navbar -->
-        <nav class="navbar navbar-expand-lg shadow-sm fixed-top" style="background: var(--color-dark);">
-            <div class="container-fluid">
-                <a href="#hero" class="navbar-brand navbar-brand-custom mx-5" :style="{ color: 'var(--color-bg)' }"
-                    @click.prevent="scrollToSection('hero')">SlideAI</a>
-
-                <div class="d-flex align-items-center mx-5">
-                    <a href="#features" class="nav-link me-3" :style="{ color: 'var(--color-bg)' }"
-                        @click.prevent="scrollToSection('features')">平台特色</a>
-                    <a href="#pricing" class="nav-link me-3" :style="{ color: 'var(--color-bg)' }"
-                        @click.prevent="scrollToSection('pricing')">方案說明</a>
-                    <router-link to="/login" class="btn me-2"
-                        :style="{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }">登入</router-link>
-                    <router-link to="/register" class="btn"
-                        :style="{ background: 'var(--color-primary)', color: 'white' }">註冊</router-link>
-                </div>
-            </div>
-        </nav>
-
+        <LandingNavBar />
         <!-- Hero Section -->
         <section id="hero"
             class="hero-section d-flex flex-column justify-content-center align-items-center text-center vh-100 text-white position-relative"
@@ -33,7 +15,6 @@
             <div class="marquee-container mt-5">
                 <div class="marquee-dark">
                     <span>🚀 AI 智能文生圖 · 🔒 資料安全加密 · 🧠 多元應用場景 · 🔗 彈性串接 API · </span>
-                    <!-- <span>🚀 AI 智能文生圖 · 🔒 資料安全加密 · 🧠 多元應用場景 · 🔗 彈性串接 API · </span> -->
                 </div>
             </div>
         </section>
@@ -155,6 +136,7 @@
 </template>
 
 <script setup>
+import LandingNavBar from './LandingNavBar.vue'
 import { onMounted } from 'vue'
 
 const features = [

@@ -1,19 +1,7 @@
 <template>
     <!-- Fixed Navbar -->
-    <nav class="navbar navbar-expand-lg shadow-sm fixed-top" style="background: var(--color-dark);">
-        <div class="container-fluid">
-            <router-link to="/" class="navbar-brand navbar-brand-custom mx-5">SlideAI</router-link>
-            <div class="d-flex align-items-center">
+    <LandingNavBar />
 
-                <div class="d-flex align-items-center mx-5">
-                    <router-link to="/login" class="btn me-2"
-                        :style="{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }">登入</router-link>
-                    <router-link to="/register" class="btn"
-                        :style="{ background: 'var(--color-primary)', color: 'white' }">註冊</router-link>
-                </div>
-            </div>
-        </div>
-    </nav>
 
     <!-- Login Box -->
     <div class="container d-flex justify-content-center align-items-center min-vh-100">
@@ -47,6 +35,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiRequest, API_ENDPOINTS } from '../config/api.js'
+import LandingNavBar from './LandingNavBar.vue'
 
 const email = ref('')
 const password = ref('')
