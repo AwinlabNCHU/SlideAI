@@ -1,28 +1,7 @@
 <template>
     <div class="ppt-bg">
-        <!-- Fixed Navbar -->
-        <nav class="navbar navbar-expand-lg shadow-sm fixed-top" style="background: var(--color-dark);">
-            <div class="container-fluid">
-                <router-link v-if="isAdmin" to="/admin" class="navbar-brand navbar-brand-custom mx-5"
-                    :style="{ color: 'var(--color-primary)' }">SlideAI</router-link>
-                <router-link v-if="!isAdmin" to="/dashboard" class="navbar-brand navbar-brand-custom mx-5"
-                    :style="{ color: 'var(--color-primary)' }">SlideAI</router-link>
+        <NavBar />
 
-                <div class="d-flex align-items-center mx-5">
-                    <router-link v-if="isAdmin" to="/admin" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'var(--color-primary)' }">管理者介面</router-link>
-                    <router-link v-if="!isAdmin" to="/dashboard" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'var(--color-primary)' }">介面</router-link>
-                    <router-link to="/video-abstract" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'var(--color-primary)' }">AI影片摘要</router-link>
-                    <router-link to="/ppt-generator" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'white' }">AI語音簡報</router-link>
-                    <router-link to="/files" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'white' }">檔案管理</router-link>
-                    <button class="btn btn-outline-light ms-3" @click="logout">登出</button>
-                </div>
-            </div>
-        </nav>
         <div class="container">
             <div class="ppt-card card shadow-lg p-4" style="max-width: 480px; width: 100%; margin: 120px auto 0 auto;">
                 <h2 class="mb-3 text-center ppt-title">AI簡報轉影片</h2>
@@ -91,6 +70,7 @@
 import { useRouter } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import { apiRequest, API_ENDPOINTS, getApiEndpoint } from '../config/api.js'
+import NavBar from './NavBar.vue'
 
 const router = useRouter()
 const pdfFile = ref(null)

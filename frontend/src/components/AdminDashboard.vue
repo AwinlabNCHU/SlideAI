@@ -1,26 +1,9 @@
 <template>
     <div class="admin-dashboard-bg">
-        <!-- Fixed Navbar -->
-        <nav class="navbar navbar-expand-lg shadow-sm fixed-top" style="background: var(--color-dark);">
-            <div class="container-fluid">
-                <router-link to="/admin" class="navbar-brand navbar-brand-custom mx-5">SlideAI</router-link>
-                <div class="d-flex align-items-center mx-5">
-                    <router-link to="/admin" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'var(--color-primary)' }">管理者介面</router-link>
-                    <router-link to="/video-abstract" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'var(--color-primary)' }">AI影片摘要</router-link>
-                    <router-link to="/video-abstract" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'white' }">AI語音簡報</router-link>
-                    <router-link to="/files" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'white' }">檔案管理</router-link>
-                    <button class="btn btn-outline-light ms-3" @click="logout">登出</button>
-                </div>
-            </div>
-        </nav>
+        <NavBar />
 
-        <!-- Body Area -->
         <div class="admin-dashboard-container mx-auto py-3">
-            <h2 class="mb-4 text-center admin-title">管理者專區</h2>
+            <h2 class="m-4 text-center admin-title">管理者專區</h2>
             <p class="text-center mb-5 admin-desc">歡迎回來！這裡是您的 SlideAI 工具管理後台。</p>
 
             <div class="row g-4 mb-5">
@@ -158,6 +141,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiRequest, API_ENDPOINTS } from '../config/api.js'
+import NavBar from './NavBar.vue'
 
 const router = useRouter()
 const userCount = ref('...')
@@ -214,6 +198,7 @@ onMounted(async () => {
     margin-bottom: 40px;
     padding-left: 12px;
     padding-right: 12px;
+    padding-top: 70px;
 }
 
 .admin-title {
@@ -295,12 +280,58 @@ onMounted(async () => {
 @media (max-width: 991px) {
     .admin-dashboard-container {
         max-width: 98vw;
+        padding-top: 70px;
     }
 
     .row.g-4>.col-lg-5,
     .row.g-4>.col-lg-7 {
         max-width: 100%;
         flex: 0 0 100%;
+    }
+}
+
+/* 手機版統一縮小卡片、icon、字體、表格 */
+@media (max-width: 750px) {
+    .admin-title {
+        font-size: 1.2rem;
+    }
+
+    .admin-desc {
+        font-size: 0.95rem;
+    }
+
+    .stat-card {
+        min-height: 70px;
+        padding: 0.5rem 0.3rem;
+        border-radius: 0.7rem;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+    }
+
+    .stat-number {
+        font-size: 1.2rem;
+    }
+
+    .stat-icon {
+        font-size: 1.2rem;
+    }
+
+    .user-list-card {
+        border-radius: 0.7rem;
+        margin-top: 10px;
+        padding: 0.5rem 0.3rem;
+    }
+
+    .user-list-title {
+        font-size: 0.95rem;
+    }
+
+    .admin-table th,
+    .admin-table td {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.2rem;
     }
 }
 </style>

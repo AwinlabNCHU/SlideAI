@@ -1,25 +1,8 @@
 <template>
     <div class="file-manager-bg">
-        <!-- Fixed Navbar -->
-        <nav class="navbar navbar-expand-lg shadow-sm fixed-top" style="background: var(--color-dark);">
-            <div class="container-fluid">
-                <router-link to="/dashboard" class="navbar-brand navbar-brand-custom mx-5">SlideAI</router-link>
-                <div class="d-flex align-items-center mx-5">
-                    <router-link v-if="isAdmin" to="/admin" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'var(--color-primary)' }">管理者介面</router-link>
-                    <router-link v-if="!isAdmin" to="/dashboard" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'var(--color-primary)' }">介面</router-link>
-                    <router-link to="/video-abstract" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'var(--color-primary)' }">AI影片摘要</router-link>
-                    <router-link to="/ppt-generator" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'var(--color-primary)' }">AI語音簡報</router-link>
-                    <router-link to="/files" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'white' }">檔案管理</router-link>
-                    <button class="btn btn-outline-light ms-3" @click="logout">登出</button>
-                </div>
-            </div>
-        </nav>
-        <div class="container">
+        <NavBar />
+
+        <div class="container-fluid px-3">
             <div class="file-manager-card card shadow-lg p-4"
                 style="max-width: 1200px; width: 100%; margin: 120px auto 0 auto;">
                 <h2 class="mb-3 text-center file-manager-title">檔案管理</h2>
@@ -215,6 +198,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { apiRequest, API_ENDPOINTS, clearExpiredCache } from '../config/api.js'
+import NavBar from './NavBar.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -225,22 +209,6 @@ const loading = ref(false)
 const deletingFiles = ref(new Set())
 const showSuccessMessage = ref(false)
 const successMessage = ref('')
-
-const isAdmin = ref(false)
-
-const logout = () => {
-    localStorage.removeItem('token')
-    router.push('/login')
-}
-
-const fetchMe = async () => {
-    try {
-        const me = await apiRequest(API_ENDPOINTS.ME)
-        isAdmin.value = !!me.is_admin
-    } catch (error) {
-        console.error('獲取用戶資訊失敗:', error)
-    }
-}
 
 // 計算屬性
 const totalSize = computed(() => {
@@ -440,7 +408,6 @@ const initializeData = async () => {
         // 強制清除快取
         clearExpiredCache()
 
-        await fetchMe()
         await fetchFiles()
         await fetchExpiringFiles()
 
@@ -632,7 +599,7 @@ watch(() => route.path, (newPath, oldPath) => {
     color: #155724 !important;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 750px) {
     .file-manager-card {
         margin: 100px 10px 0 10px;
         padding: 1.2rem;
@@ -645,6 +612,50 @@ watch(() => route.path, (newPath, oldPath) => {
     .btn-group .btn {
         padding: 0.2rem 0.4rem;
         font-size: 0.8rem;
+    }
+
+    /* 手機版表格優化 */
+    .table th,
+    .table td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.8rem;
+    }
+
+    /* 手機版統計卡片優化 */
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+
+    .stat-number {
+        font-size: 1.5rem;
+    }
+
+    /* 手機版按鈕組優化 */
+    .btn-group-sm>.btn {
+        padding: 0.15rem 0.3rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* 超小螢幕優化 */
+@media (max-width: 576px) {
+    .file-manager-card {
+        margin: 80px 5px 0 5px;
+        padding: 1rem;
+    }
+
+    .container-fluid {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    .table-responsive {
+        font-size: 0.75rem;
+    }
+
+    .btn-group-sm>.btn {
+        padding: 0.1rem 0.2rem;
+        font-size: 0.7rem;
     }
 }
 </style>

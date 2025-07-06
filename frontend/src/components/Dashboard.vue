@@ -1,22 +1,6 @@
 <template>
     <div class="dashboard-bg">
-        <!-- Fixed Navbar -->
-        <nav class="navbar navbar-expand-lg shadow-sm fixed-top" style="background: var(--color-dark);">
-            <div class="container-fluid">
-                <router-link to="/dashboard" class="navbar-brand navbar-brand-custom mx-5">SlideAI</router-link>
-                <div class="d-flex align-items-center mx-5">
-                    <router-link v-if="!isAdmin" to="/dashboard" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'var(--color-primary)' }">介面</router-link>
-                    <router-link to="/video-abstract" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'var(--color-primary)' }">AI影片摘要</router-link>
-                    <router-link to="/video-abstract" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'white' }">AI語音簡報</router-link>
-                    <router-link to="/files" class="navbar-brand navbar-brand-custom me-3"
-                        :style="{ color: 'white' }">檔案管理</router-link>
-                    <button class="btn btn-outline-light ms-3" @click="logout">登出</button>
-                </div>
-            </div>
-        </nav>
+        <NavBar />
 
         <!-- 主內容區塊 -->
         <div class="main-content d-flex flex-column align-items-center justify-content-center py-5">
@@ -97,6 +81,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiRequest, API_ENDPOINTS } from '../config/api.js'
+import NavBar from './NavBar.vue'
 
 const router = useRouter()
 const usageStatus = ref({
