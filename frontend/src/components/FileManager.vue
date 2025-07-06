@@ -25,9 +25,32 @@
                 <h2 class="mb-3 text-center file-manager-title">檔案管理</h2>
                 <p class="text-center mb-4 file-manager-desc">管理您的 AI 生成檔案，查看分析結果和下載檔案。</p>
 
+                <!-- 刷新按鈕 -->
+                <div class="text-end mb-3">
+                    <button class="btn btn-outline-primary btn-sm" @click="initializeData" :disabled="loading">
+                        <i class="bi bi-arrow-clockwise me-1"></i>
+                        {{ loading ? '載入中...' : '刷新' }}
+                    </button>
+                </div>
+
+                <!-- 成功提示 -->
+                <div v-if="showSuccessMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>
+                    {{ successMessage }}
+                    <button type="button" class="btn-close" @click="showSuccessMessage = false"></button>
+                </div>
+
                 <div class="card-body p-0">
+                    <!-- 載入狀態 -->
+                    <div v-if="loading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">載入中...</span>
+                        </div>
+                        <p class="mt-3 text-muted">正在載入檔案列表...</p>
+                    </div>
+
                     <!-- 檔案統計 -->
-                    <div class="row mb-4">
+                    <div v-else class="row mb-4">
                         <div class="col-md-4">
                             <div class="stat-card text-center p-3 rounded">
                                 <h5 class="stat-number">{{ files.length }}</h5>
@@ -91,8 +114,12 @@
                                             <button class="btn btn-outline-primary" @click="viewFile(file)" title="查看">
                                                 <i class="bi bi-eye"></i>
                                             </button>
-                                            <button class="btn btn-outline-danger" @click="deleteFile(file)" title="刪除">
-                                                <i class="bi bi-trash"></i>
+                                            <button class="btn btn-outline-danger" @click="deleteFile(file)" title="刪除"
+                                                :disabled="deletingFiles.has(file.id)">
+                                                <span v-if="deletingFiles.has(file.id)"
+                                                    class="spinner-border spinner-border-sm me-1" role="status"
+                                                    aria-hidden="true"></span>
+                                                <i v-else class="bi bi-trash"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -185,15 +212,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { apiRequest, API_ENDPOINTS } from '../config/api.js'
+import { ref, computed, watch, nextTick } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { apiRequest, API_ENDPOINTS, clearExpiredCache } from '../config/api.js'
 
 const router = useRouter()
+const route = useRoute()
 const files = ref([])
 const expiringFiles = ref([])
 const selectedFile = ref(null)
 const loading = ref(false)
+const deletingFiles = ref(new Set())
+const showSuccessMessage = ref(false)
+const successMessage = ref('')
 
 const isAdmin = ref(false)
 
@@ -221,10 +252,19 @@ const totalSize = computed(() => {
 const fetchFiles = async () => {
     try {
         loading.value = true
+        console.log('開始獲取檔案列表...')
+
+        // 清除快取以確保獲取最新資料
+        clearExpiredCache()
+
         const response = await apiRequest(API_ENDPOINTS.USER_FILES)
         files.value = response
+        console.log('檔案列表獲取成功:', files.value.length, '個檔案')
     } catch (error) {
         console.error('獲取檔案列表失敗:', error)
+        files.value = []
+        // 顯示錯誤提示
+        alert(`獲取檔案列表失敗: ${error.message}`)
     } finally {
         loading.value = false
     }
@@ -233,8 +273,10 @@ const fetchFiles = async () => {
 // 獲取即將過期的檔案
 const fetchExpiringFiles = async () => {
     try {
+        console.log('開始獲取過期檔案...')
         const response = await apiRequest(API_ENDPOINTS.USER_FILES_EXPIRING)
         expiringFiles.value = response
+        console.log('過期檔案獲取成功:', expiringFiles.value.length, '個檔案')
 
         // 如果有即將過期的檔案，顯示提醒
         if (expiringFiles.value.length > 0) {
@@ -242,6 +284,8 @@ const fetchExpiringFiles = async () => {
         }
     } catch (error) {
         console.error('獲取過期檔案失敗:', error)
+        // 不顯示錯誤提示，因為這不是關鍵功能
+        expiringFiles.value = []
     }
 }
 
@@ -251,30 +295,76 @@ const deleteFile = async (file) => {
         return
     }
 
+    let fileIndex = -1
     try {
+        // 設置特定檔案的刪除狀態
+        deletingFiles.value.add(file.id)
+
+        // 先從本地列表中移除檔案，提供即時反饋
+        fileIndex = files.value.findIndex(f => f.id === file.id)
+        if (fileIndex > -1) {
+            files.value.splice(fileIndex, 1)
+        }
+
         await apiRequest(`${API_ENDPOINTS.USER_FILES_DELETE}/${file.id}`, {
             method: 'DELETE'
         })
 
+        // 清除快取，確保獲取最新資料
+        clearExpiredCache()
+
         // 重新獲取檔案列表
         await fetchFiles()
-        alert('檔案已刪除')
+
+        // 重新獲取過期檔案列表
+        await fetchExpiringFiles()
+
+        // 使用更友好的提示
+        console.log('檔案已成功刪除')
+        showSuccessMessage.value = true
+        successMessage.value = '檔案已成功刪除'
+
+        // 3秒後自動隱藏成功提示
+        setTimeout(() => {
+            showSuccessMessage.value = false
+        }, 3000)
     } catch (error) {
         console.error('刪除檔案失敗:', error)
-        alert('刪除檔案失敗')
+
+        // 如果刪除失敗，恢復檔案到列表中
+        if (fileIndex > -1) {
+            files.value.splice(fileIndex, 0, file)
+        }
+
+        alert(`刪除檔案失敗: ${error.message}`)
+    } finally {
+        // 清除特定檔案的刪除狀態
+        deletingFiles.value.delete(file.id)
     }
 }
 
 // 查看檔案詳情
 const viewFile = (file) => {
     selectedFile.value = file
-    const modal = new bootstrap.Modal(document.getElementById('fileDetailModal'))
+    const modalEl = document.getElementById('fileDetailModal')
+    const modal = new bootstrap.Modal(modalEl)
+    // 監聽關閉事件
+    modalEl.addEventListener('hidden.bs.modal', handleModalClose, { once: true })
     modal.show()
+}
+
+const handleModalClose = () => {
+    // 失焦，避免 aria-hidden 警告
+    document.activeElement.blur()
+    // 或者把焦點移到主內容
+    // document.getElementById('main-content')?.focus()
 }
 
 // 顯示過期警告
 const showExpiryWarning = () => {
-    const modal = new bootstrap.Modal(document.getElementById('expiryWarningModal'))
+    const modalEl = document.getElementById('expiryWarningModal')
+    const modal = new bootstrap.Modal(modalEl)
+    modalEl.addEventListener('hidden.bs.modal', handleModalClose, { once: true })
     modal.show()
 }
 
@@ -338,15 +428,42 @@ const getStatusBadgeClass = (status) => {
     return classes[status] || 'bg-secondary'
 }
 
-// 組件掛載時獲取資料
-onMounted(async () => {
-    await fetchMe()
-    await fetchFiles()
-    await fetchExpiringFiles()
+// 初始化函數
+const initializeData = async () => {
+    console.log('初始化 FileManager 資料...')
+    try {
+        // 重置狀態
+        files.value = []
+        expiringFiles.value = []
+        showSuccessMessage.value = false
 
-    // 每小時檢查一次過期檔案
-    setInterval(fetchExpiringFiles, 60 * 60 * 1000)
-})
+        // 強制清除快取
+        clearExpiredCache()
+
+        await fetchMe()
+        await fetchFiles()
+        await fetchExpiringFiles()
+
+        console.log('FileManager 資料初始化完成')
+    } catch (error) {
+        console.error('初始化資料失敗:', error)
+        // 顯示錯誤提示
+        alert(`初始化資料失敗: ${error.message}`)
+    }
+}
+
+
+// 監聽路由變化，當進入此頁面時重新獲取資料
+watch(() => route.path, (newPath, oldPath) => {
+    console.log('路由變化:', oldPath, '->', newPath)
+    if (newPath === '/files') {
+        console.log('進入檔案管理頁面，重新獲取資料...')
+        // 使用 nextTick 確保 DOM 更新後再獲取資料
+        nextTick(() => {
+            initializeData()
+        })
+    }
+}, { immediate: true })
 </script>
 
 <style scoped>
@@ -503,6 +620,16 @@ onMounted(async () => {
 
 .bg-secondary {
     background: #6c757d !important;
+}
+
+.alert-success {
+    background: #d4edda !important;
+    border-color: #c3e6cb !important;
+    color: #155724 !important;
+}
+
+.alert-success .btn-close {
+    color: #155724 !important;
 }
 
 @media (max-width: 768px) {

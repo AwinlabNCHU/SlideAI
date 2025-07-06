@@ -18,6 +18,7 @@ from models import User, UsageRecord, UserFile, Base
 from datetime import datetime, date, timedelta
 from fastapi import status
 import psutil
+from functools import lru_cache
 
 load_dotenv()
 
@@ -28,6 +29,10 @@ DAILY_USAGE_LIMIT = 5  # 每日使用次數限制
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB (免費方案限制)
 FILE_RETENTION_DAYS = 7  # 檔案保留天數
 FILE_EXPIRY_WARNING_HOURS = 24  # 檔案過期前警告時間 (小時)
+
+# 簡單的用戶快取
+user_cache = {}
+cache_timestamps = {}
 
 # 處理 Render.com 的 DATABASE_URL 格式
 if DATABASE_URL.startswith("postgres://"):
@@ -87,13 +92,38 @@ def create_access_token(data: dict):
 def decode_access_token(token: str):
     return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
+def cleanup_cache():
+    """清理過期的快取項目（5分鐘過期）"""
+    current_time = datetime.utcnow()
+    expired_keys = []
+    
+    for email, timestamp in cache_timestamps.items():
+        if (current_time - timestamp).total_seconds() > 300:  # 5分鐘
+            expired_keys.append(email)
+    
+    for key in expired_keys:
+        user_cache.pop(key, None)
+        cache_timestamps.pop(key, None)
+
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
         payload = decode_access_token(token)
         email = payload.get('sub')
+        
+        # 定期清理快取
+        cleanup_cache()
+        
+        # 檢查快取
+        if email in user_cache:
+            return user_cache[email]
+        
         user = db.query(User).filter_by(email=email).first()
         if not user:
             raise HTTPException(status_code=401, detail='使用者不存在')
+        
+        # 存入快取（5分鐘過期）
+        user_cache[email] = user
+        cache_timestamps[email] = datetime.utcnow()
         return user
     except JWTError:
         raise HTTPException(status_code=401, detail='Token 無效')
@@ -211,8 +241,17 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter_by(email=req.email).first()
     if not user or not verify_password(req.password, user.hashed_password):
         raise HTTPException(status_code=401, detail='帳號或密碼錯誤')
+    
+    # 直接返回用戶信息，避免額外的 API 調用
     token = create_access_token({"sub": user.email})
-    return {"access_token": token, "token_type": "bearer"}
+    return {
+        "access_token": token, 
+        "token_type": "bearer",
+        "user": {
+            "email": user.email,
+            "is_admin": user.is_admin
+        }
+    }
 
 # 新增忘記密碼 API
 @app.post('/api/forgot-password')
@@ -632,10 +671,17 @@ def get_user_files(current_user: User = Depends(get_current_user), db: Session =
     ]
 
 @app.get('/api/user/files/expiring')
-def get_expiring_files(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """獲取即將過期的檔案"""
-    expiring_files = get_expiring_files(db)
-    user_expiring_files = [f for f in expiring_files if f.user_id == current_user.id]
+def get_user_expiring_files(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """獲取特定用戶即將過期的檔案"""
+    now = datetime.utcnow()
+    warning_time = now + timedelta(hours=FILE_EXPIRY_WARNING_HOURS)
+    
+    expiring_files = db.query(UserFile).filter(
+        UserFile.user_id == current_user.id,
+        UserFile.expires_at <= warning_time,
+        UserFile.expires_at > now,
+        UserFile.status == 'completed'
+    ).all()
     
     return [
         {
@@ -643,9 +689,9 @@ def get_expiring_files(current_user: User = Depends(get_current_user), db: Sessi
             "file_name": file.file_name,
             "file_type": file.file_type,
             "expires_at": file.expires_at.isoformat(),
-            "hours_remaining": int((file.expires_at - datetime.utcnow()).total_seconds() / 3600)
+            "hours_remaining": int((file.expires_at - now).total_seconds() / 3600)
         }
-        for file in user_expiring_files
+        for file in expiring_files
     ]
 
 @app.delete('/api/user/files/{file_id}')
