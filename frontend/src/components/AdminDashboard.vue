@@ -6,131 +6,166 @@
             <h2 class="m-4 text-center admin-title">管理者專區</h2>
             <p class="text-center mb-5 admin-desc">歡迎回來！這裡是您的 SlideAI 工具管理後台。</p>
 
-            <div class="row g-4 mb-5">
-                <!-- 左側：統計卡片 -->
-                <div class="col-12 col-lg-5">
-                    <div class="row g-4">
-                        <div class="col-6">
-                            <div class="card stat-card shadow-sm h-100 w-100">
-                                <div
-                                    class="card-body d-flex flex-column justify-content-center align-items-center py-4">
-                                    <div class="stat-icon mb-2"><i class="bi bi-bar-chart"></i></div>
-                                    <h5 class="card-title mb-2 stat-label">今日總使用</h5>
-                                    <p class="display-4 mb-0 fw-bold stat-number">{{ dailySummary.total_usage }}</p>
+            <!-- 導航標籤 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab"
+                                data-bs-target="#overview" type="button" role="tab">
+                                <i class="bi bi-graph-up me-2"></i>概覽
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="database-tab" data-bs-toggle="tab" data-bs-target="#database"
+                                type="button" role="tab">
+                                <i class="bi bi-database me-2"></i>資料庫監控
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 標籤內容 -->
+            <div class="tab-content" id="adminTabContent">
+                <!-- 概覽標籤 -->
+                <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                    <div class="row g-4 mb-5">
+                        <!-- 左側：統計卡片 -->
+                        <div class="col-12 col-lg-5">
+                            <div class="row g-4">
+                                <div class="col-6">
+                                    <div class="card stat-card shadow-sm h-100 w-100">
+                                        <div
+                                            class="card-body d-flex flex-column justify-content-center align-items-center py-4">
+                                            <div class="stat-icon mb-2"><i class="bi bi-bar-chart"></i></div>
+                                            <h5 class="card-title mb-2 stat-label">今日總使用</h5>
+                                            <p class="display-4 mb-0 fw-bold stat-number">{{ dailySummary.total_usage }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card stat-card shadow-sm h-100 w-100">
+                                        <div
+                                            class="card-body d-flex flex-column justify-content-center align-items-center py-4">
+                                            <div class="stat-icon mb-2"><i class="bi bi-film"></i></div>
+                                            <h5 class="card-title mb-2 stat-label">影片摘要</h5>
+                                            <p class="display-4 mb-0 fw-bold stat-number">{{ dailySummary.video_usage }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card stat-card shadow-sm h-100 w-100">
+                                        <div
+                                            class="card-body d-flex flex-column justify-content-center align-items-center py-4">
+                                            <div class="stat-icon mb-2"><i class="bi bi-file-earmark-music"></i></div>
+                                            <h5 class="card-title mb-2 stat-label">語音簡報</h5>
+                                            <p class="display-4 mb-0 fw-bold stat-number">{{ dailySummary.ppt_usage }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card stat-card shadow-sm h-100 w-100">
+                                        <div
+                                            class="card-body d-flex flex-column justify-content-center align-items-center py-4">
+                                            <div class="stat-icon mb-2"><i class="bi bi-people"></i></div>
+                                            <h5 class="card-title mb-2 stat-label">活躍用戶</h5>
+                                            <p class="display-4 mb-0 fw-bold stat-number">{{ dailySummary.active_users
+                                                }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card stat-card shadow-sm h-100 w-100">
+                                        <div
+                                            class="card-body d-flex flex-column justify-content-center align-items-center py-4">
+                                            <div class="stat-icon mb-2"><i class="bi bi-person-plus"></i></div>
+                                            <h5 class="card-title mb-2 stat-label">今年註冊人數</h5>
+                                            <p class="display-4 mb-0 fw-bold stat-number">{{ userCount }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card stat-card shadow-sm h-100 w-100">
+                                        <div
+                                            class="card-body d-flex flex-column justify-content-center align-items-center py-4">
+                                            <div class="stat-icon mb-2"><i class="bi bi-person"></i></div>
+                                            <h5 class="card-title mb-2 stat-label">總用戶數</h5>
+                                            <p class="display-4 mb-0 fw-bold stat-number">{{ userTotal }}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-6">
-                            <div class="card stat-card shadow-sm h-100 w-100">
-                                <div
-                                    class="card-body d-flex flex-column justify-content-center align-items-center py-4">
-                                    <div class="stat-icon mb-2"><i class="bi bi-film"></i></div>
-                                    <h5 class="card-title mb-2 stat-label">影片摘要</h5>
-                                    <p class="display-4 mb-0 fw-bold stat-number">{{ dailySummary.video_usage }}</p>
+                        <!-- 右側：統計表格 -->
+                        <div class="col-12 col-lg-7">
+                            <div class="card user-list-card shadow-lg rounded-4 mb-4">
+                                <div class="card-body px-4 py-4">
+                                    <h5 class="card-title mb-3 text-center user-list-title">使用者使用統計</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered align-middle mb-0 admin-table">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col">ID</th>
+                                                    <th scope="col">Email</th>
+                                                    <th scope="col">總使用次數</th>
+                                                    <th scope="col">影片摘要</th>
+                                                    <th scope="col">語音簡報</th>
+                                                    <th scope="col">今日使用</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-for="user in usageStatistics" :key="user.user_id">
+                                                    <td>{{ user.user_id }}</td>
+                                                    <td>{{ user.email }}</td>
+                                                    <td>{{ user.total_usage }}</td>
+                                                    <td>{{ user.video_usage }}</td>
+                                                    <td>{{ user.ppt_usage }}</td>
+                                                    <td>
+                                                        <span
+                                                            :class="user.today_usage >= 5 ? 'text-danger fw-bold' : 'text-success'">
+                                                            {{ user.today_usage }}/5
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="card stat-card shadow-sm h-100 w-100">
-                                <div
-                                    class="card-body d-flex flex-column justify-content-center align-items-center py-4">
-                                    <div class="stat-icon mb-2"><i class="bi bi-file-earmark-music"></i></div>
-                                    <h5 class="card-title mb-2 stat-label">語音簡報</h5>
-                                    <p class="display-4 mb-0 fw-bold stat-number">{{ dailySummary.ppt_usage }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="card stat-card shadow-sm h-100 w-100">
-                                <div
-                                    class="card-body d-flex flex-column justify-content-center align-items-center py-4">
-                                    <div class="stat-icon mb-2"><i class="bi bi-people"></i></div>
-                                    <h5 class="card-title mb-2 stat-label">活躍用戶</h5>
-                                    <p class="display-4 mb-0 fw-bold stat-number">{{ dailySummary.active_users }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="card stat-card shadow-sm h-100 w-100">
-                                <div
-                                    class="card-body d-flex flex-column justify-content-center align-items-center py-4">
-                                    <div class="stat-icon mb-2"><i class="bi bi-person-plus"></i></div>
-                                    <h5 class="card-title mb-2 stat-label">今年註冊人數</h5>
-                                    <p class="display-4 mb-0 fw-bold stat-number">{{ userCount }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="card stat-card shadow-sm h-100 w-100">
-                                <div
-                                    class="card-body d-flex flex-column justify-content-center align-items-center py-4">
-                                    <div class="stat-icon mb-2"><i class="bi bi-person"></i></div>
-                                    <h5 class="card-title mb-2 stat-label">總用戶數</h5>
-                                    <p class="display-4 mb-0 fw-bold stat-number">{{ userTotal }}</p>
+                            <div class="card user-list-card shadow-lg rounded-4">
+                                <div class="card-body px-4 py-4">
+                                    <h5 class="card-title mb-3 text-center user-list-title">用戶列表</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered align-middle mb-0 admin-table">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col">ID</th>
+                                                    <th scope="col">Email</th>
+                                                    <th scope="col">註冊日期</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-for="user in users" :key="user.id">
+                                                    <td>{{ user.id }}</td>
+                                                    <td>{{ user.email }}</td>
+                                                    <td>{{ user.created_at }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <!-- 右側：統計表格 -->
-                <div class="col-12 col-lg-7">
-                    <div class="card user-list-card shadow-lg rounded-4 mb-4">
-                        <div class="card-body px-4 py-4">
-                            <h5 class="card-title mb-3 text-center user-list-title">使用者使用統計</h5>
-                            <div class="table-responsive">
-                                <table class="table table-bordered align-middle mb-0 admin-table">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">ID</th>
-                                            <th scope="col">Email</th>
-                                            <th scope="col">總使用次數</th>
-                                            <th scope="col">影片摘要</th>
-                                            <th scope="col">語音簡報</th>
-                                            <th scope="col">今日使用</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="user in usageStatistics" :key="user.user_id">
-                                            <td>{{ user.user_id }}</td>
-                                            <td>{{ user.email }}</td>
-                                            <td>{{ user.total_usage }}</td>
-                                            <td>{{ user.video_usage }}</td>
-                                            <td>{{ user.ppt_usage }}</td>
-                                            <td>
-                                                <span
-                                                    :class="user.today_usage >= 5 ? 'text-danger fw-bold' : 'text-success'">
-                                                    {{ user.today_usage }}/5
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card user-list-card shadow-lg rounded-4">
-                        <div class="card-body px-4 py-4">
-                            <h5 class="card-title mb-3 text-center user-list-title">用戶列表</h5>
-                            <div class="table-responsive">
-                                <table class="table table-bordered align-middle mb-0 admin-table">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">ID</th>
-                                            <th scope="col">Email</th>
-                                            <th scope="col">註冊日期</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="user in users" :key="user.id">
-                                            <td>{{ user.id }}</td>
-                                            <td>{{ user.email }}</td>
-                                            <td>{{ user.created_at }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+
+                <!-- 資料庫監控標籤 -->
+                <div class="tab-pane fade" id="database" role="tabpanel">
+                    <DatabaseMonitor />
                 </div>
             </div>
         </div>
@@ -142,6 +177,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { apiRequest, API_ENDPOINTS } from '../config/api.js'
 import NavBar from './NavBar.vue'
+import DatabaseMonitor from './DatabaseMonitor.vue'
 
 const router = useRouter()
 const userCount = ref('...')

@@ -30,12 +30,18 @@ export const API_ENDPOINTS = {
   USER_FILES: "/api/user/files",
   USER_FILES_EXPIRING: "/api/user/files/expiring",
   USER_FILES_DELETE: "/api/user/files",
+  
   ADMIN_USER_COUNT: "/api/admin/user-count",
   ADMIN_USER_TOTAL: "/api/admin/user-total",
   ADMIN_USER_LIST: "/api/admin/user-list",
   ADMIN_USAGE_STATISTICS: "/api/admin/usage-statistics",
   ADMIN_DAILY_USAGE_SUMMARY: "/api/admin/daily-usage-summary",
   ADMIN_CLEANUP_FILES: "/api/admin/cleanup-files",
+
+  ADMIN_DATABASE_STATS: "/api/admin/database-stats",
+  ADMIN_RECENT_UPLOADS: "/api/admin/recent-uploads",
+  ADMIN_USER_ACTIVITY: "/api/admin/user-activity",
+  ADMIN_VERIFY_UPLOAD: "/api/admin/verify-upload",
 };
 
 // 創建完整的 API URL

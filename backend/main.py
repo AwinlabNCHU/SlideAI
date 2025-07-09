@@ -801,3 +801,197 @@ def admin_daily_usage_summary(token: str = Depends(oauth2_scheme), db: Session =
         }
     except JWTError:
         raise HTTPException(status_code=401, detail='Token 無效')
+
+@app.get('/api/admin/database-stats')
+def get_database_stats(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """獲取資料庫統計資訊"""
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="需要管理員權限")
+    
+    try:
+        # 使用者統計
+        total_users = db.query(User).count()
+        admin_users = db.query(User).filter(User.is_admin == True).count()
+        regular_users = total_users - admin_users
+        
+        # 檔案統計
+        total_files = db.query(UserFile).count()
+        processing_files = db.query(UserFile).filter(UserFile.status == 'processing').count()
+        completed_files = db.query(UserFile).filter(UserFile.status == 'completed').count()
+        expired_files = db.query(UserFile).filter(UserFile.status == 'expired').count()
+        
+        # 使用記錄統計
+        total_usage_records = db.query(UsageRecord).count()
+        video_abstract_usage = db.query(UsageRecord).filter(UsageRecord.service_type == 'video_abstract').count()
+        ppt_to_video_usage = db.query(UsageRecord).filter(UsageRecord.service_type == 'ppt_to_video').count()
+        
+        # 最近24小時的活動
+        yesterday = datetime.utcnow() - timedelta(days=1)
+        recent_files = db.query(UserFile).filter(UserFile.created_at >= yesterday).count()
+        recent_usage = db.query(UsageRecord).filter(UsageRecord.usage_date >= yesterday).count()
+        
+        return {
+            "database_stats": {
+                "users": {
+                    "total": total_users,
+                    "admin": admin_users,
+                    "regular": regular_users
+                },
+                "files": {
+                    "total": total_files,
+                    "processing": processing_files,
+                    "completed": completed_files,
+                    "expired": expired_files
+                },
+                "usage_records": {
+                    "total": total_usage_records,
+                    "video_abstract": video_abstract_usage,
+                    "ppt_to_video": ppt_to_video_usage
+                },
+                "recent_activity": {
+                    "files_last_24h": recent_files,
+                    "usage_last_24h": recent_usage
+                }
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"獲取統計資訊失敗: {str(e)}")
+
+@app.get('/api/admin/recent-uploads')
+def get_recent_uploads(
+    limit: int = 20,
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """獲取最近上傳的檔案列表"""
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="需要管理員權限")
+    
+    try:
+        recent_files = db.query(UserFile).order_by(UserFile.created_at.desc()).limit(limit).all()
+        
+        file_list = []
+        for file in recent_files:
+            user = db.query(User).filter(User.id == file.user_id).first()
+            file_list.append({
+                "id": file.id,
+                "file_name": file.file_name,
+                "file_type": file.file_type,
+                "file_size": file.file_size,
+                "status": file.status,
+                "created_at": file.created_at.isoformat(),
+                "expires_at": file.expires_at.isoformat(),
+                "user_email": user.email if user else "Unknown",
+                "analysis_result": file.analysis_result
+            })
+        
+        return {"recent_uploads": file_list}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"獲取最近上傳失敗: {str(e)}")
+
+@app.get('/api/admin/user-activity/{user_email}')
+def get_user_activity(
+    user_email: str,
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """獲取特定使用者的活動記錄"""
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="需要管理員權限")
+    
+    try:
+        user = db.query(User).filter(User.email == user_email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="使用者不存在")
+        
+        # 獲取使用者的檔案
+        user_files = db.query(UserFile).filter(UserFile.user_id == user.id).order_by(UserFile.created_at.desc()).all()
+        
+        # 獲取使用者的使用記錄
+        usage_records = db.query(UsageRecord).filter(UsageRecord.user_id == user.id).order_by(UsageRecord.usage_date.desc()).all()
+        
+        files_list = []
+        for file in user_files:
+            files_list.append({
+                "id": file.id,
+                "file_name": file.file_name,
+                "file_type": file.file_type,
+                "file_size": file.file_size,
+                "status": file.status,
+                "created_at": file.created_at.isoformat(),
+                "expires_at": file.expires_at.isoformat(),
+                "analysis_result": file.analysis_result
+            })
+        
+        usage_list = []
+        for record in usage_records:
+            usage_list.append({
+                "id": record.id,
+                "service_type": record.service_type,
+                "usage_date": record.usage_date.isoformat()
+            })
+        
+        return {
+            "user_info": {
+                "id": user.id,
+                "email": user.email,
+                "is_admin": user.is_admin,
+                "created_at": user.created_at.isoformat()
+            },
+            "files": files_list,
+            "usage_records": usage_list,
+            "total_files": len(files_list),
+            "total_usage": len(usage_list)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"獲取使用者活動失敗: {str(e)}")
+
+@app.get('/api/admin/verify-upload/{file_id}')
+def verify_file_upload(
+    file_id: int,
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """驗證特定檔案的上傳狀態"""
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="需要管理員權限")
+    
+    try:
+        file_record = db.query(UserFile).filter(UserFile.id == file_id).first()
+        if not file_record:
+            raise HTTPException(status_code=404, detail="檔案記錄不存在")
+        
+        user = db.query(User).filter(User.id == file_record.user_id).first()
+        
+        # 檢查檔案是否實際存在於檔案系統
+        file_exists = os.path.exists(file_record.file_path)
+        
+        return {
+            "file_info": {
+                "id": file_record.id,
+                "file_name": file_record.file_name,
+                "file_path": file_record.file_path,
+                "file_type": file_record.file_type,
+                "file_size": file_record.file_size,
+                "status": file_record.status,
+                "created_at": file_record.created_at.isoformat(),
+                "expires_at": file_record.expires_at.isoformat(),
+                "analysis_result": file_record.analysis_result
+            },
+            "user_info": {
+                "id": user.id,
+                "email": user.email
+            },
+            "verification": {
+                "file_exists_in_fs": file_exists,
+                "file_size_matches": file_exists and os.path.getsize(file_record.file_path) == file_record.file_size if file_exists else False,
+                "is_expired": datetime.utcnow() > file_record.expires_at,
+                "days_until_expiry": (file_record.expires_at - datetime.utcnow()).days if datetime.utcnow() <= file_record.expires_at else 0
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"驗證檔案失敗: {str(e)}")
